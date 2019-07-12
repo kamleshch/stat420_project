@@ -1,0 +1,59 @@
+---
+title: "STAT 420: Final Project"
+author: "Summer 2019, kamlesh2, kdp3, pa9"
+date: ''
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
+urlcolor: cyan
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.
+
+The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching. The original data was obtained from [this page](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+
+Loading data from CSV:
+```{r}
+library(readxl)
+lcf_data <- read_excel("UK_Living_Costs_Food_Survey_2013.xlsx")
+```
+
+The goal of this project is to build a model to predict household expenditure of a family based on features like income, household size and other variables mentioned in below list. The data comes in the shape of ```r nrow(lcf_data)``` observations and ```r ncol(lcf_data)``` variables. Each row contains data from one household. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.
+
+
+| Variable name | Variable label                                                        | Variable type |
+|---------------|-----------------------------------------------------------------------|---------------|
+| casenew       | Randomly generated case number                                        | Scalar        |
+| weighta       | Annual weight                                                         | Scalar        |
+| P550tpr       | Total expenditure, by adults & children (top-coded)                   | Scalar        |
+| P344pr        | Gross normal weekly household income (top-coded)                      | Scalar        |
+| P425r         | Main source of household income                                       | Nominal       |
+| A172          | Internet connection in household                                      | Nominal       |
+| A093r         | Economic position of Household Reference Person                       | Nominal       |
+| A094r         | NS-SEC 3 class of Household Reference Person                          | Nominal       |
+| A121r         | Tenure type                                                           | Nominal       |
+| SexHRP        | Sex of Household Reference Person                                     | Nominal       |
+| A049r         | Number of persons in household                                        | Ordinal       |
+| G018r         | Number of adults in household                                         | Ordinal       |
+| G019r         | Number of children in household                                       | Ordinal       |
+| Gorx          | Government Office Region - modified                                   | Nominal       |
+| weightar      | Weight (rescaled)                                                     | Scalar        |
+| maininc       | Main source of household income (recoded, P425-1)                     | Nominal       |
+| income        | Income                                                                | Scalar        |
+| expenditure   | Total expenditure (top coded, formerly P550tpr)                       | Scalar        |
+| hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
+
+Sample data:
+```{r}
+head(lcf_data)
+```
+
