@@ -1,11 +1,11 @@
 ---
-title: "STAT 420: Final Project"
-author: "Summer 2019, kamlesh2, kdp3, pa9"
+title: "UK Household Annual Expenditure Analysis"
+author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
 date: ''
 output:
+  pdf_document: default
   html_document: 
     toc: yes
-  pdf_document: default
 urlcolor: cyan
 editor_options: 
   chunk_output_type: console
@@ -14,16 +14,69 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+\
+\
 
-## Introduction
+Loading the libraries required for this analysis
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(kableExtra)
+```
 
-The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across the UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.
+## Introduction to the dataset
 
-The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching. 
+The Living Costs and Food Survey (LCF) is an annual survey carried out in United Kingdom by [Office for National Statistics](https://www.ons.gov.uk/) since 1957. It collects data on spending pattern and the cost of living of households across UK.
+\
+\
 
-The dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found at [https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details). The citation for the dataset is.
+<center>![](https://www.denverlibrary.org/sites/dplorg/files/united_kingdom_map2.jpg){width=300}</center>
+\
+\
 
-University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2). 
+### Data Collection Methodology
+
+The LCF sample for Great Britain is a multi-stage stratified random sample with clustering. Address with 'small user' postcodes are drawn from the postcode address file. The LCF sample for Northern Ireland, which is part for Great Britain is collected by the central survey unit of Northern Island Statistics and Research Agency(NISRA). A systematic random sample of private addresses is drawn from the land and property service agency property database.
+  
+  - LCF is a continuous survey which is collected throughout the year  to ensure seasonal effects are covered. 
+
+  - Randomely about 11,000 private households are selected each year.
+  
+  - Since it is completely voluntary, households can choose not to respond to the survey.
+  
+  - Every year on average about 50% of 11,000 households choose to respond to the survey
+  
+  - Volunteering household needs to fill a Household questionnaire, Individual questionnaire and dairy to track the daily expenditure for 2 weeks for all individuals aged 16 and over.
+  
+
+### Reason for this survey.
+
+The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. 
+
+### LCF Survey 2013
+
+The dataset which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+
+LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland. 
+\
+\
+ 
+#### References
+ 
+*University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)*
+\
+\
+
+### Purpose of study
+
+As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household.
+
+We are also interested in knowing if a regression model can be build to predicti the expenditure with good confidence.
+
+\
+\
+\
+
+## Variable definitions
 
 The variables in the dataset are
 
@@ -50,17 +103,24 @@ The variables in the dataset are
 | hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
 
 The dataset contains 5,144 observations with each observation containing data from one household. The goal of this project is to build a model to predict expenditure of a family from the other variables in the dataset. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.
+\
+\
 
-
+## Loading the dataset in R
 Loading data from the tab delimited file:
 ```{r}
 lcf_data = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
 ```
 
+\
+\
+
 Sample data:
 ```{r}
-head(lcf_data)
+head(lcf_data) %>% 
+  kable() %>% kable_styling(c("striped","bordered"))
 ```
+\
 
 The structure of the dataframe is:
 ```{r}
