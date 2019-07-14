@@ -1,0 +1,467 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\PassOptionsToPackage{usenames,dvipsnames}{color} % color is loaded by hyperref
+\hypersetup{unicode=true,
+            pdftitle={STAT 420: Final Project},
+            pdfauthor={Summer 2019, kamlesh2, kdp3, pa9},
+            colorlinks=true,
+            linkcolor=Maroon,
+            citecolor=Blue,
+            urlcolor=cyan,
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{STAT 420: Final Project}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Summer 2019, kamlesh2, kdp3, pa9}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+    \date{}
+    \predate{}\postdate{}
+  
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+
+\begin{document}
+\maketitle
+
+Loading the libraries required for this analysis
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\KeywordTok{library}\NormalTok{(kableExtra)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{intoduction-to-the-dataset}{%
+\subsection{Intoduction to the
+dataset}\label{intoduction-to-the-dataset}}
+
+The Living Costs and Food Survey (LCF) is an annual survey carried out
+in United Kingdom by \href{https://www.ons.gov.uk/}{Office for National
+Statistics} since 1957. It collects data on spending pattern and the
+cost of living of households across UK.\\
+~\\
+
+\includegraphics[width=3.125in,height=\textheight]{https://www.denverlibrary.org/sites/dplorg/files/united_kingdom_map2.jpg}
+
+\hypertarget{data-collection-methodology}{%
+\subsubsection{Data Collection
+Methodology}\label{data-collection-methodology}}
+
+The LCF sample for Great Britain is a multi-stage stratified random
+sample with clustering. Address with `small user' postcodes are drawn
+from the postcode address file. The LCF sample for Northern Ireland,
+which is part for Great Britain is collected by the central survey unit
+of Northern Island Statistics and Research Agency(NISRA). A systematic
+random sample of private addresses is drawn from the land and property
+service agency property database.
+
+\begin{itemize}
+\item
+  LCF is a continuous survey which is collected throughout the year to
+  ensure seasonal effects are covered.
+\item
+  Randomely about 11,000 private households are selected each year.
+\item
+  Since it is completely voluntary, households can choose not to respond
+  to the survey.
+\item
+  Every year on average about 50\% of 11,000 households choose to
+  respond to the survey
+\item
+  Volunteering household needs to fill a Household questionnaire,
+  Individual questionnaire and dairy to track the daily expenditure for
+  2 weeks for all individuals aged 16 and over.
+\end{itemize}
+
+\hypertarget{reason-for-this-survey.}{%
+\subsubsection{Reason for this survey.}\label{reason-for-this-survey.}}
+
+The LCF provides information for the Retail Prices Index, National
+Accounts estimates of household expenditure, the analysis of the effect
+of taxes and benefits and trends in nutrition. The results, however, are
+multi-purpose, providing an invaluable supply of economic and social
+data.
+
+\hypertarget{lcf-survey-2013}{%
+\subsubsection{LCF Survey 2013}\label{lcf-survey-2013}}
+
+The dataset which we are analysing in this project is teaching dataset
+which is a subset of LCF 2013 survey. This dataset has been simplified
+for the purpose of learning and teaching. This dataset has been
+anonymised and deposited with the \href{https://ukdataservice.ac.uk}{UK
+data service} and can be found
+\href{https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932\#!/details}{here}.
+
+LCF 2013 survey has 5,144 respondents out of which 151 were from
+northern Ireland.\\
+~\\
+
+\hypertarget{references}{%
+\paragraph{References}\label{references}}
+
+\emph{University of Manchester, Cathie Marsh Institute for Social
+Research (CMIST), UK Data Service, Office for National Statistics.
+(2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching
+Dataset. {[}data collection{]}. 2nd Edition. Office for National
+Statistics, {[}original data producer(s){]}. Office for National
+Statistics. SN: 7932, \url{http://doi.org/10.5255/UKDA-SN-7932-2}}\\
+~\\
+~\\
+
+The variables in the dataset are
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule
+\begin{minipage}[b]{0.14\columnwidth}\raggedright
+Variable name\strut
+\end{minipage} & \begin{minipage}[b]{0.64\columnwidth}\raggedright
+Variable label\strut
+\end{minipage} & \begin{minipage}[b]{0.14\columnwidth}\raggedright
+Variable type\strut
+\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+casenew\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Randomly generated case number\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+weighta\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Annual weight\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+P550tpr\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Total expenditure, by adults \& children (top-coded)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+P344pr\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Gross normal weekly household income (top-coded)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+P425r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Main source of household income\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+A172\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Internet connection in household\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+A093r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Economic position of Household Reference Person\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+A094r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+NS-SEC 3 class of Household Reference Person\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+A121r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Tenure type\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+SexHRP\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Sex of Household Reference Person\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+A049r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Number of persons in household\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Ordinal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+G018r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Number of adults in household\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Ordinal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+G019r\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Number of children in household\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Ordinal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+Gorx\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Government Office Region - modified\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+weightar\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Weight (rescaled)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+maininc\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Main source of household income (recoded, P425-1)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+income\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Income\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+expenditure\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Total expenditure (top coded, formerly P550tpr)\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Scalar\strut
+\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.14\columnwidth}\raggedright
+hhsize\strut
+\end{minipage} & \begin{minipage}[t]{0.64\columnwidth}\raggedright
+Household size, number of people in household (recoded)formerly
+A049r\strut
+\end{minipage} & \begin{minipage}[t]{0.14\columnwidth}\raggedright
+Nominal\strut
+\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+The dataset contains 5,144 observations with each observation containing
+data from one household. The goal of this project is to build a model to
+predict expenditure of a family from the other variables in the dataset.
+We will first study and visualise the original data and examine
+potential outliers. We visualise and analyse the data and extract
+features as we go forward to generate a model and provide visuals.\\
+~\\
+~\\
+
+\hypertarget{purpose-of-exploration}{%
+\subsubsection{Purpose of exploration}\label{purpose-of-exploration}}
+
+Loading data from the tab delimited file:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{lcf_data =}\StringTok{ }\KeywordTok{read.table}\NormalTok{(}\StringTok{"icfforworkbook.tab"}\NormalTok{, }\DataTypeTok{sep =} \StringTok{"}\CharTok{\textbackslash{}t}\StringTok{"}\NormalTok{, }\DataTypeTok{header =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Sample data:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{head}\NormalTok{(lcf_data) }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{kable}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }\KeywordTok{kable_styling}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{,}\StringTok{"bordered"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r}
+\hline
+casenew & weighta & P550tpr & P344pr & P425r & A172 & A093r & A094r & A121r & SexHRP & A049r & G018r & G019r & Gorx & weightar & maininc & income & expenditure & hhsize\\
+\hline
+14999 & 2.834724 & 380.6958 & 465.36 & 1 & 1 & 4 & 3 & 1 & 2 & 4 & 2 & 3 & 4 & 0.5432482 & 0 & 465.36 & 380.6958 & 4\\
+\hline
+14993 & 10.077947 & 546.4134 & 855.26 & 1 & 1 & 1 & 4 & 3 & 2 & 2 & 2 & 1 & 7 & 1.9313442 & 0 & 855.26 & 546.4134 & 2\\
+\hline
+14993 & 4.088677 & 242.1890 & 160.96 & 1 & 1 & 1 & 2 & 3 & 2 & 1 & 1 & 1 & 8 & 0.7835566 & 0 & 160.96 & 242.1890 & 1\\
+\hline
+14984 & 4.571760 & 421.3824 & 656.22 & 1 & 1 & 1 & 3 & 3 & 1 & 2 & 2 & 1 & 6 & 0.8761349 & 0 & 656.22 & 421.3824 & 2\\
+\hline
+14981 & 7.349617 & 370.4056 & 398.80 & 1 & 1 & 1 & 4 & 3 & 1 & 1 & 1 & 1 & 8 & 1.4084853 & 0 & 398.80 & 370.4056 & 1\\
+\hline
+14976 & 5.046701 & 172.3972 & 321.02 & 1 & 2 & 1 & 3 & 1 & 1 & 1 & 1 & 1 & 11 & 0.9671531 & 0 & 321.02 & 172.3972 & 1\\
+\hline
+\end{tabular}
+\end{table}
+
+The structure of the dataframe is:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{str}\NormalTok{(lcf_data)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    5144 obs. of  19 variables:
+##  $ casenew    : int  14999 14993 14993 14984 14981 14976 14975 14972 14971 14970 ...
+##  $ weighta    : num  2.83 10.08 4.09 4.57 7.35 ...
+##  $ P550tpr    : num  381 546 242 421 370 ...
+##  $ P344pr     : num  465 855 161 656 399 ...
+##  $ P425r      : int  1 1 1 1 1 1 2 1 1 2 ...
+##  $ A172       : int  1 1 1 1 1 2 1 1 1 1 ...
+##  $ A093r      : int  4 1 1 1 1 1 4 4 1 4 ...
+##  $ A094r      : int  3 4 2 3 4 3 5 5 2 5 ...
+##  $ A121r      : int  1 3 3 3 3 1 3 1 3 3 ...
+##  $ SexHRP     : int  2 2 2 1 1 1 1 2 1 1 ...
+##  $ A049r      : int  4 2 1 2 1 1 2 5 2 2 ...
+##  $ G018r      : int  2 2 1 2 1 1 2 4 2 2 ...
+##  $ G019r      : int  3 1 1 1 1 1 1 1 1 1 ...
+##  $ Gorx       : int  4 7 8 6 8 11 12 8 10 3 ...
+##  $ weightar   : num  0.543 1.931 0.784 0.876 1.408 ...
+##  $ maininc    : int  0 0 0 0 0 0 1 0 0 1 ...
+##  $ income     : num  465 855 161 656 399 ...
+##  $ expenditure: num  381 546 242 421 370 ...
+##  $ hhsize     : int  4 2 1 2 1 1 2 5 2 2 ...
+\end{verbatim}
+
+
+\end{document}
