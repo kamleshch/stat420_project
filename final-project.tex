@@ -25,8 +25,8 @@
 \usepackage{hyperref}
 \PassOptionsToPackage{usenames,dvipsnames}{color} % color is loaded by hyperref
 \hypersetup{unicode=true,
-            pdftitle={STAT 420: Final Project},
-            pdfauthor={Summer 2019, kamlesh2, kdp3, pa9},
+            pdftitle={UK Household Annual Expenditure Analysis},
+            pdfauthor={STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9},
             colorlinks=true,
             linkcolor=Maroon,
             citecolor=Blue,
@@ -119,10 +119,10 @@
 
 \setlength{\droptitle}{-2em}
 
-  \title{STAT 420: Final Project}
+  \title{UK Household Annual Expenditure Analysis}
     \pretitle{\vspace{\droptitle}\centering\huge}
   \posttitle{\par}
-    \author{Summer 2019, kamlesh2, kdp3, pa9}
+    \author{STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9}
     \preauthor{\centering\large\emph}
   \postauthor{\par}
     \date{}
@@ -155,9 +155,9 @@ Loading the libraries required for this analysis
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{intoduction-to-the-dataset}{%
-\subsection{Intoduction to the
-dataset}\label{intoduction-to-the-dataset}}
+\hypertarget{introduction-to-the-dataset}{%
+\subsection{Introduction to the
+dataset}\label{introduction-to-the-dataset}}
 
 The Living Costs and Food Survey (LCF) is an annual survey carried out
 in United Kingdom by \href{https://www.ons.gov.uk/}{Office for National
@@ -230,7 +230,18 @@ Dataset. {[}data collection{]}. 2nd Edition. Office for National
 Statistics, {[}original data producer(s){]}. Office for National
 Statistics. SN: 7932, \url{http://doi.org/10.5255/UKDA-SN-7932-2}}\\
 ~\\
-~\\
+
+\hypertarget{purpose-of-study}{%
+\subsubsection{Purpose of study}\label{purpose-of-study}}
+
+As part of this study, we would like to infer the household expenditure
+based on income and other socioeconomic indicators of the household.
+
+We are also interested in knowing if a regression model can be build to
+predicti the expenditure with good confidence.
+
+\hypertarget{variable-definitions}{%
+\subsection{Variable definitions}\label{variable-definitions}}
 
 The variables in the dataset are
 
@@ -389,10 +400,9 @@ We will first study and visualise the original data and examine
 potential outliers. We visualise and analyse the data and extract
 features as we go forward to generate a model and provide visuals.\\
 ~\\
-~\\
 
-\hypertarget{purpose-of-exploration}{%
-\subsubsection{Purpose of exploration}\label{purpose-of-exploration}}
+\hypertarget{loading-the-dataset-in-r}{%
+\subsection{Loading the dataset in R}\label{loading-the-dataset-in-r}}
 
 Loading data from the tab delimited file:
 

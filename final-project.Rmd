@@ -3,9 +3,9 @@ title: "UK Household Annual Expenditure Analysis"
 author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
 date: ''
 output:
+  pdf_document: default
   html_document: 
     toc: yes
-  pdf_document: default
 urlcolor: cyan
 editor_options: 
   chunk_output_type: console
