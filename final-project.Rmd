@@ -102,7 +102,7 @@ The variables in the dataset are
 | expenditure   | Total expenditure (top coded, formerly P550tpr)                       | Scalar        |
 | hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
 
-The dataset contains 5,144 observations with each observation containing data from one household. The goal of this project is to build a model to predict expenditure of a family from the other variables in the dataset. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.
+The dataset contains 5,144 observations with each observation containing data from one household.
 \
 \
 
