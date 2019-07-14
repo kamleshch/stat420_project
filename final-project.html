@@ -387,12 +387,11 @@ $(document).ready(function () {
 
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.</p>
-<p>The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching. The original data was obtained from <a href="https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details">this page</a>.</p>
-<p>Loading data from CSV:</p>
-<pre class="r"><code>library(readxl)
-lcf_data &lt;- read_excel(&quot;UK_Living_Costs_Food_Survey_2013.xlsx&quot;)</code></pre>
-<p>The goal of this project is to build a model to predict household expenditure of a family based on features like income, household size and other variables mentioned in below list. The data comes in the shape of <code>5144</code> observations and <code>19</code> variables. Each row contains data from one household. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.</p>
+<p>The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across the UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.</p>
+<p>The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching.</p>
+<p>The dataset has been anonymised and deposited with the <a href="https://ukdataservice.ac.uk">UK data service</a> and can be found at <a href="https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details">https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details</a>. The citation for the dataset is.</p>
+<p>University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, <a href="http://doi.org/10.5255/UKDA-SN-7932-2">http://doi.org/10.5255/UKDA-SN-7932-2</a>.</p>
+<p>The variables in the dataset are</p>
 <table>
 <colgroup>
 <col width="14%"></col>
@@ -504,20 +503,47 @@ lcf_data &lt;- read_excel(&quot;UK_Living_Costs_Food_Survey_2013.xlsx&quot;)</co
 </tr>
 </tbody>
 </table>
+<p>The dataset contains 5,144 observations with each observation containing data from one household. The goal of this project is to build a model to predict expenditure of a family from the other variables in the dataset. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.</p>
+<p>Loading data from the tab delimited file:</p>
+<pre class="r"><code>lcf_data = read.table(&quot;icfforworkbook.tab&quot;, sep = &quot;\t&quot;, header = TRUE)</code></pre>
 <p>Sample data:</p>
 <pre class="r"><code>head(lcf_data)</code></pre>
-<pre><code>## # A tibble: 6 x 19
-##   casenew weighta P550tpr P344pr P425r  A172 A093r A094r A121r SexHRP A049r
-##     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-## 1   14999    2.83    381.   465.     1     1     4     3     1      2     4
-## 2   14993   10.1     546.   855.     1     1     1     4     3      2     2
-## 3   14993    4.09    242.   161.     1     1     1     2     3      2     1
-## 4   14984    4.57    421.   656.     1     1     1     3     3      1     2
-## 5   14981    7.35    370.   399.     1     1     1     4     3      1     1
-## 6   14976    5.05    172.   321.     1     2     1     3     1      1     1
-## # … with 8 more variables: G018r &lt;dbl&gt;, G019r &lt;dbl&gt;, Gorx &lt;dbl&gt;,
-## #   weightar &lt;dbl&gt;, maininc &lt;dbl&gt;, income &lt;dbl&gt;, expenditure &lt;dbl&gt;,
-## #   hhsize &lt;dbl&gt;</code></pre>
+<pre><code>##   casenew   weighta  P550tpr P344pr P425r A172 A093r A094r A121r SexHRP
+## 1   14999  2.834724 380.6958 465.36     1    1     4     3     1      2
+## 2   14993 10.077947 546.4134 855.26     1    1     1     4     3      2
+## 3   14993  4.088676 242.1890 160.96     1    1     1     2     3      2
+## 4   14984  4.571760 421.3824 656.22     1    1     1     3     3      1
+## 5   14981  7.349617 370.4056 398.80     1    1     1     4     3      1
+## 6   14976  5.046701 172.3972 321.02     1    2     1     3     1      1
+##   A049r G018r G019r Gorx  weightar maininc income expenditure hhsize
+## 1     4     2     3    4 0.5432482       0 465.36    380.6958      4
+## 2     2     2     1    7 1.9313442       0 855.26    546.4134      2
+## 3     1     1     1    8 0.7835566       0 160.96    242.1890      1
+## 4     2     2     1    6 0.8761349       0 656.22    421.3824      2
+## 5     1     1     1    8 1.4084853       0 398.80    370.4056      1
+## 6     1     1     1   11 0.9671531       0 321.02    172.3972      1</code></pre>
+<p>The structure of the dataframe is:</p>
+<pre class="r"><code>str(lcf_data)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    5144 obs. of  19 variables:
+##  $ casenew    : int  14999 14993 14993 14984 14981 14976 14975 14972 14971 14970 ...
+##  $ weighta    : num  2.83 10.08 4.09 4.57 7.35 ...
+##  $ P550tpr    : num  381 546 242 421 370 ...
+##  $ P344pr     : num  465 855 161 656 399 ...
+##  $ P425r      : int  1 1 1 1 1 1 2 1 1 2 ...
+##  $ A172       : int  1 1 1 1 1 2 1 1 1 1 ...
+##  $ A093r      : int  4 1 1 1 1 1 4 4 1 4 ...
+##  $ A094r      : int  3 4 2 3 4 3 5 5 2 5 ...
+##  $ A121r      : int  1 3 3 3 3 1 3 1 3 3 ...
+##  $ SexHRP     : int  2 2 2 1 1 1 1 2 1 1 ...
+##  $ A049r      : int  4 2 1 2 1 1 2 5 2 2 ...
+##  $ G018r      : int  2 2 1 2 1 1 2 4 2 2 ...
+##  $ G019r      : int  3 1 1 1 1 1 1 1 1 1 ...
+##  $ Gorx       : int  4 7 8 6 8 11 12 8 10 3 ...
+##  $ weightar   : num  0.543 1.931 0.784 0.876 1.408 ...
+##  $ maininc    : int  0 0 0 0 0 0 1 0 0 1 ...
+##  $ income     : num  465 855 161 656 399 ...
+##  $ expenditure: num  381 546 242 421 370 ...
+##  $ hhsize     : int  4 2 1 2 1 1 2 5 2 2 ...</code></pre>
 </div>
 
 

@@ -17,18 +17,15 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.
+The Living Costs and Food Survey 2013 (LCF) is study on spending patterns and the cost of living that reflects household budgets across the UK. The survey is conducted throughout the year across the whole of the UK and is the most significant consumer survey undertaken in the UK. The LCF is a voluntary sample survey of private households. Each individual aged 16 and over in the household visited is asked to keep diary records of daily expenditure for two weeks.
 
-The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching. The original data was obtained from [this page](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. The survey is carried out by the Office for National Statistics (ONS) in Great Britain and by the Northern Ireland Statistics and Research Agency (NISRA) in Northern Ireland. The teaching dataset is a subset which has been subjected to certain simplifications and additions for the purpose of learning and teaching. 
 
-Loading data from CSV:
-```{r}
-library(readxl)
-lcf_data <- read_excel("UK_Living_Costs_Food_Survey_2013.xlsx")
-```
+The dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found at [https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details). The citation for the dataset is.
 
-The goal of this project is to build a model to predict household expenditure of a family based on features like income, household size and other variables mentioned in below list. The data comes in the shape of ```r nrow(lcf_data)``` observations and ```r ncol(lcf_data)``` variables. Each row contains data from one household. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.
+University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2). 
 
+The variables in the dataset are
 
 | Variable name | Variable label                                                        | Variable type |
 |---------------|-----------------------------------------------------------------------|---------------|
@@ -52,8 +49,21 @@ The goal of this project is to build a model to predict household expenditure of
 | expenditure   | Total expenditure (top coded, formerly P550tpr)                       | Scalar        |
 | hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
 
+The dataset contains 5,144 observations with each observation containing data from one household. The goal of this project is to build a model to predict expenditure of a family from the other variables in the dataset. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.
+
+
+Loading data from the tab delimited file:
+```{r}
+lcf_data = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
+```
+
 Sample data:
 ```{r}
 head(lcf_data)
+```
+
+The structure of the dataframe is:
+```{r}
+str(lcf_data)
 ```
 
