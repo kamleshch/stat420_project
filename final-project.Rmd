@@ -3,7 +3,6 @@ title: "UK Household Annual Expenditure Analysis"
 author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
 date: ''
 output:
-  pdf_document: default
   html_document: 
     toc: yes
 urlcolor: cyan
@@ -39,7 +38,7 @@ The LCF sample for Great Britain is a multi-stage stratified random sample with 
   
   - LCF is a continuous survey which is collected throughout the year  to ensure seasonal effects are covered. 
 
-  - Randomely about 11,000 private households are selected each year.
+  - Randomly about 11,000 private households are selected each year.
   
   - Since it is completely voluntary, households can choose not to respond to the survey.
   
@@ -54,23 +53,20 @@ The LCF provides information for the Retail Prices Index, National Accounts esti
 
 ### LCF Survey 2013
 
-The dataset which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+The dataset <sup>1</sup> which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
 
-LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland. 
-\
-\
- 
-#### References
- 
-*University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)*
+LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland. Each row in the dataset contains observations from one household.
+
 \
 \
 
 ### Purpose of study
 
-As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household.
+Household spending is the amount of final consumption expenditure made by resident households to meet their everyday needs, such as food, clothing, housing (rent), energy, transport, durable goods (notably cars), health costs, leisure, and miscellaneous services. It is typically around 60% of gross domestic product (GDP) and is therefore an essential variable for economic analysis of demand <sup>2</sup>. 
 
-We are also interested in knowing if a regression model can be build to predicti the expenditure with good confidence.
+Economists have traditionally relied on reported household income and expenditure as preferred indicators of poverty and living standards but the use of such indicators can be problematic. Their measurement ususally require lengthly modules and detailed questions which are not practical for households with other priorities. Also the resulting data from those modules can contain errors or reporting biases. <sup>3</sup>
+
+As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household. The model built will be tested to determine how well it performs at predicting the expenditure of the household. 
 
 \
 \
@@ -102,7 +98,6 @@ The variables in the dataset are
 | expenditure   | Total expenditure (top coded, formerly P550tpr)                       | Scalar        |
 | hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
 
-The dataset contains 5,144 observations with each observation containing data from one household.
 \
 \
 
@@ -127,3 +122,13 @@ The structure of the dataframe is:
 str(lcf_data)
 ```
 
+\
+\
+
+## References
+ 
+<sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)
+
+<sup>2</sup> Organisation for Economic Co-operation and Development. "Household Accounts - Household Spending". oecd.org. [https://data.oecd.org/hha/household-spending.htm](https://data.oecd.org/hha/household-spending.htm) (Accessed July 21st 2019).
+
+<sup>3</sup> D. Ferguson, B & Tandon, A & Gakidou, E & J. L. Murray, C. (2010). Estimating Permanent Income Using Indicator Variables. Health Systems Performance Assessment: Debates, Methods and Empiricism.
