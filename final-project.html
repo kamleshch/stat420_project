@@ -264,9 +264,7 @@ h6 {
 </style>
 
 
-</head>
 
-<body>
 
 <style type="text/css">
 .main-container {
@@ -291,22 +289,92 @@ img {
 button.code-folding-btn:focus {
   outline: none;
 }
+summary {
+  display: list-item;
+}
 </style>
 
 
 
-<div class="container-fluid main-container">
-
 <!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
 <script>
 $(document).ready(function () {
   window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
 });
 </script>
 
 <!-- code folding -->
 
 
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
 
 
 
@@ -316,7 +384,7 @@ $(document).ready(function () {
 
 
 <h1 class="title toc-ignore">UK Household Annual Expenditure Analysis</h1>
-<h4 class="author"><em>STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9</em></h4>
+<h4 class="author">STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9</h4>
 
 </div>
 
@@ -330,6 +398,7 @@ $(document).ready(function () {
 </ul></li>
 <li><a href="#variable-definitions">Variable definitions</a></li>
 <li><a href="#loading-the-dataset-in-r">Loading the dataset in R</a></li>
+<li><a href="#references">References</a></li>
 </ul>
 </div>
 
@@ -355,7 +424,7 @@ library(kableExtra)</code></pre>
 <p>The LCF sample for Great Britain is a multi-stage stratified random sample with clustering. Address with ‘small user’ postcodes are drawn from the postcode address file. The LCF sample for Northern Ireland, which is part for Great Britain is collected by the central survey unit of Northern Island Statistics and Research Agency(NISRA). A systematic random sample of private addresses is drawn from the land and property service agency property database.</p>
 <ul>
 <li><p>LCF is a continuous survey which is collected throughout the year to ensure seasonal effects are covered.</p></li>
-<li><p>Randomely about 11,000 private households are selected each year.</p></li>
+<li><p>Randomly about 11,000 private households are selected each year.</p></li>
 <li><p>Since it is completely voluntary, households can choose not to respond to the survey.</p></li>
 <li><p>Every year on average about 50% of 11,000 households choose to respond to the survey</p></li>
 <li><p>Volunteering household needs to fill a Household questionnaire, Individual questionnaire and dairy to track the daily expenditure for 2 weeks for all individuals aged 16 and over.</p></li>
@@ -367,21 +436,17 @@ library(kableExtra)</code></pre>
 </div>
 <div id="lcf-survey-2013" class="section level3">
 <h3>LCF Survey 2013</h3>
-<p>The dataset which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the <a href="https://ukdataservice.ac.uk">UK data service</a> and can be found <a href="https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details">here</a>.</p>
-<p>LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland.<br />
+<p>The dataset <sup>1</sup> which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the <a href="https://ukdataservice.ac.uk">UK data service</a> and can be found <a href="https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details">here</a>.</p>
+<p>LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland. Each row in the dataset contains observations from one household.</p>
+<p><br />
 <br />
 </p>
-<div id="references" class="section level4">
-<h4>References</h4>
-<p><em>University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, <a href="http://doi.org/10.5255/UKDA-SN-7932-2">http://doi.org/10.5255/UKDA-SN-7932-2</a></em><br />
-<br />
-</p>
-</div>
 </div>
 <div id="purpose-of-study" class="section level3">
 <h3>Purpose of study</h3>
-<p>As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household.</p>
-<p>We are also interested in knowing if a regression model can be build to predicti the expenditure with good confidence.</p>
+<p>Household spending is the amount of final consumption expenditure made by resident households to meet their everyday needs, such as food, clothing, housing (rent), energy, transport, durable goods (notably cars), health costs, leisure, and miscellaneous services. It is typically around 60% of gross domestic product (GDP) and is therefore an essential variable for economic analysis of demand <sup>2</sup>.</p>
+<p>Economists have traditionally relied on reported household income and expenditure as preferred indicators of poverty and living standards but the use of such indicators can be problematic. Their measurement ususally require lengthly modules and detailed questions which are not practical for households with other priorities. Also the resulting data from those modules can contain errors or reporting biases. <sup>3</sup></p>
+<p>As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household. The model built will be tested to determine how well it performs at predicting the expenditure of the household.</p>
 <p><br />
 <br />
 <br />
@@ -502,7 +567,7 @@ library(kableExtra)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>The dataset contains 5,144 observations with each observation containing data from one household. The goal of this project is to build a model to predict expenditure of a family from the other variables in the dataset. We will first study and visualise the original data and examine potential outliers. We visualise and analyse the data and extract features as we go forward to generate a model and provide visuals.<br />
+<p><br />
 <br />
 </p>
 </div>
@@ -939,7 +1004,7 @@ hhsize
 </p>
 <p>The structure of the dataframe is:</p>
 <pre class="r"><code>str(lcf_data)</code></pre>
-<pre><code>## 'data.frame':    5144 obs. of  19 variables:
+<pre><code>## &#39;data.frame&#39;:    5144 obs. of  19 variables:
 ##  $ casenew    : int  14999 14993 14993 14984 14981 14976 14975 14972 14971 14970 ...
 ##  $ weighta    : num  2.83 10.08 4.09 4.57 7.35 ...
 ##  $ P550tpr    : num  381 546 242 421 370 ...
@@ -959,6 +1024,15 @@ hhsize
 ##  $ income     : num  465 855 161 656 399 ...
 ##  $ expenditure: num  381 546 242 421 370 ...
 ##  $ hhsize     : int  4 2 1 2 1 1 2 5 2 2 ...</code></pre>
+<p><br />
+<br />
+</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p><sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, <a href="http://doi.org/10.5255/UKDA-SN-7932-2">http://doi.org/10.5255/UKDA-SN-7932-2</a></p>
+<p><sup>2</sup> Organisation for Economic Co-operation and Development. “Household Accounts - Household Spending”. oecd.org. <a href="https://data.oecd.org/hha/household-spending.htm">https://data.oecd.org/hha/household-spending.htm</a> (Accessed July 21st 2019).</p>
+<p><sup>3</sup> D. Ferguson, B &amp; Tandon, A &amp; Gakidou, E &amp; J. L. Murray, C. (2010). Estimating Permanent Income Using Indicator Variables. Health Systems Performance Assessment: Debates, Methods and Empiricism.</p>
 </div>
 
 
