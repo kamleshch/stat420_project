@@ -104,7 +104,40 @@ The variables in the dataset are
 ## Loading the dataset in R
 Loading data from the tab delimited file:
 ```{r}
-lcf_data = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
+lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
+
+lcf_data_raw$incomeSource = ifelse(lcf_data_raw$P425r==1,"EarnedIncome","OtherIncome")
+lcf_data_raw$incomeSource = as.factor(lcf_data_raw$incomeSource)
+
+lcf_data_raw$internet = ifelse(lcf_data_raw$A172==1, "Yes", "No")
+lcf_data_raw$internet = as.factor(lcf_data_raw$internet)
+
+lcf_data_raw$economicHRP = ifelse(lcf_data_raw$A093r==1,"FullTime",ifelse(lcf_data_raw$A093r==2,"PartTime",ifelse(lcf_data_raw$A093r==3,"Unemployed","EconomicallyInactive")))
+lcf_data_raw$economicHRP = as.factor(lcf_data_raw$economicHRP)
+
+lcf_data_raw$SEC3Class = ifelse(lcf_data_raw$A094r==1, "Class1", ifelse(lcf_data_raw$A094r==2, "Class2", ifelse(lcf_data_raw$A094r==3, "Class3", ifelse(lcf_data_raw$A094r==4, "Class 4", "Class 5"))))
+lcf_data_raw$SEC3Class = as.factor(lcf_data_raw$SEC3Class)
+
+lcf_data_raw$tenureType = ifelse(lcf_data_raw$A121r==1, "PublicRented", ifelse(lcf_data_raw$A121r==2, "PrivateRented", "Owned"))
+lcf_data_raw$tenureType = as.factor(lcf_data_raw$tenureType)
+
+lcf_data_raw$sex_HRP = ifelse(lcf_data_raw$SexHRP==1, "Male", "Female")
+lcf_data_raw$sex_HRP = as.factor(lcf_data_raw$sex_HRP)
+
+lcf_data_raw$A049r = as.factor(lcf_data_raw$A049r) # number of persons in the household
+
+lcf_data_raw$G018r = as.factor(lcf_data_raw$G018r) # number of adults in the household
+
+lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
+lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
+
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
+
+# select columns
+cols = c("noAdults", "noPersons", "NoChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
+lcf_data = lcf_data_raw[cols]
+
 ```
 
 \
