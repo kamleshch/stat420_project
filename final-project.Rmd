@@ -18,6 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Loading the libraries required for this analysis
 ```{r message=FALSE, warning=FALSE}
+# install.packages("corrplot")
+# install.packages("PerformanceAnalytics")
+
 library(tidyverse)
 library(kableExtra)
 ```
@@ -138,6 +141,18 @@ colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
 cols = c("noAdults", "noPersons", "NoChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
 lcf_data = lcf_data_raw[cols]
 
+# create a dataframe with the factor variables as numeric for correlation plots
+lcf_data1 = lcf_data
+lcf_data1$noAdults = as.numeric(lcf_data$noAdults)
+lcf_data1$noPersons = as.numeric(lcf_data$noPersons)
+lcf_data1$NoChildren = as.numeric(lcf_data$NoChildren)
+lcf_data1$incomeSource = as.numeric(lcf_data$incomeSource)
+lcf_data1$internet = as.numeric(lcf_data$internet)
+lcf_data1$internet = as.numeric(lcf_data$internet)
+lcf_data1$economicHRP = as.numeric(lcf_data$economicHRP)
+lcf_data1$SEC3Class = as.numeric(lcf_data$SEC3Class)
+lcf_data1$tenureType = as.numeric(lcf_data$tenureType)
+lcf_data1$sex_HRP = as.numeric(lcf_data$sex_HRP)
 ```
 
 \
@@ -157,7 +172,19 @@ str(lcf_data)
 
 \
 \
+## Results
 
+```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set"}
+PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
+```
+
+```{r echo=FALSE,fig.cap="Figure 2 - Correlation matrix for the data set"}
+corrplot::corrplot(cor(lcf_data1), method="circle")
+```
+
+
+\
+\
 ## References
  
 <sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)
