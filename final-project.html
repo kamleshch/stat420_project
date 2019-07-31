@@ -397,7 +397,12 @@ $(document).ready(function () {
 <li><a href="#purpose-of-study">Purpose of study</a></li>
 </ul></li>
 <li><a href="#variable-definitions">Variable definitions</a></li>
-<li><a href="#loading-the-dataset-in-r">Loading the dataset in R</a></li>
+<li><a href="#loading-the-dataset-in-r">Loading the dataset in R</a><ul>
+<li><a href="#model-evaluation">Model evaluation</a></li>
+<li><a href="#variable-selection">Variable selection</a></li>
+</ul></li>
+<li><a href="#results">Results</a></li>
+<li><a href="#references">References</a></li>
 </ul>
 </div>
 
@@ -407,9 +412,12 @@ $(document).ready(function () {
 <p>Loading the libraries required for this analysis</p>
 <pre class="r"><code># install.packages(&quot;corrplot&quot;)
 # install.packages(&quot;PerformanceAnalytics&quot;)
+# install.packages(&quot;nortest&quot;)
 
 library(tidyverse)
-library(kableExtra)</code></pre>
+library(kableExtra)
+library(lmtest)
+library(nortest)</code></pre>
 <div id="introduction-to-the-dataset" class="section level2">
 <h2>Introduction to the dataset</h2>
 <p>The Living Costs and Food Survey (LCF) is an annual survey carried out in United Kingdom by <a href="https://www.ons.gov.uk/">Office for National Statistics</a> since 1957. It collects data on spending pattern and the cost of living of households across UK.<br />
@@ -917,9 +925,39 @@ Male
 ##  $ SEC3Class   : Factor w/ 5 levels &quot;Class 4&quot;,&quot;Class 5&quot;,..: 5 1 4 5 1 5 2 2 4 2 ...
 ##  $ tenureType  : Factor w/ 3 levels &quot;Owned&quot;,&quot;PrivateRented&quot;,..: 3 1 1 1 1 3 1 3 1 1 ...
 ##  $ sex_HRP     : Factor w/ 2 levels &quot;Female&quot;,&quot;Male&quot;: 1 1 1 2 2 2 2 1 2 2 ...</code></pre>
-<p><br />
-<br />
-## Results</p>
+<div id="model-evaluation" class="section level3">
+<h3>Model evaluation</h3>
+<p>The following functions will be used to evaluate the models.</p>
+<pre class="r"><code>get_bp_decision = function(model, alpha = 0.01) { 
+  decide = unname(bptest(model)$p.value &lt; alpha) 
+  ifelse(decide, &quot;Reject&quot;, &quot;Fail to Reject&quot;)
+}
+
+# reject means residuals does not follow a normal distribution
+get_ad_decision = function(model) {
+  decide = unname(ad.test(resid(model))$p.value &lt; 0.05)
+  ifelse(decide, &quot;Reject&quot;, &quot;Fail to Reject&quot;)
+}
+
+get_sw_decision = function(model, alpha = 0.01) {
+ decide = unname(shapiro.test(resid(model))$p.value &lt; alpha) 
+ ifelse(decide, &quot;Reject&quot;, &quot;Fail to Reject&quot;)
+}
+
+get_loocv_rmse = function(model) { 
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_rmse = function(model) {
+  mean(model$residuals ^ 2)
+}
+
+get_adj_r2 = function(model) { 
+  summary(model)$adj.r.squared
+}</code></pre>
+</div>
+<div id="variable-selection" class="section level3">
+<h3>Variable selection</h3>
 <pre><code>## Registered S3 method overwritten by &#39;xts&#39;:
 ##   method     from
 ##   as.zoo.xts zoo</code></pre>
@@ -935,9 +973,49 @@ Figure 1 - Correlation and Scatterplot of the variables of the data set
 Figure 2 - Correlation matrix for the data set
 </p>
 </div>
+<p>The correlation and scatter plot shown in Figure 1 shows a strong correlation between <code>hhsize</code> and <code>noPersons</code>, and to a letter extent with <code>noAdults</code>, and <code>NoChildren</code>. This is confirmed in the correlation matrix of Figure 2. Thus <code>hhsize</code> will be used as a potential predictor for the model in place of <code>noPersons</code>, <code>noAdults</code>, and <code>NoChildren</code>.</p>
+<p>Start with a simple additive model with all the predictors.</p>
+<pre class="r"><code>add_model = lm(expenditure ~ income + hhsize + incomeSource + internet + economicHRP + SEC3Class + tenureType + sex_HRP, data = lcf_data)</code></pre>
+<table>
+<colgroup>
+<col width="20%"></col>
+<col width="20%"></col>
+<col width="20%"></col>
+<col width="20%"></col>
+<col width="20%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Adjusted <span class="math inline">\(R^2\)</span></th>
+<th align="center">RSME</th>
+<th align="center">LOOCV</th>
+<th align="center">Anderson-Darling Normality Test Result</th>
+<th align="center">Brausch-Pagan Test Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">0.5403969</td>
+<td align="center">3.917113210^{4}</td>
+<td align="center">198.4661298</td>
+<td align="center">Reject</td>
+<td align="center">Reject</td>
+</tr>
+</tbody>
+</table>
 <p><br />
 <br />
-## References</p>
+</p>
+</div>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
+<p><br />
+<br />
+</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
 <p><sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, <a href="http://doi.org/10.5255/UKDA-SN-7932-2">http://doi.org/10.5255/UKDA-SN-7932-2</a></p>
 <p><sup>2</sup> Organisation for Economic Co-operation and Development. “Household Accounts - Household Spending”. oecd.org. <a href="https://data.oecd.org/hha/household-spending.htm">https://data.oecd.org/hha/household-spending.htm</a> (Accessed July 21st 2019).</p>
 <p><sup>3</sup> D. Ferguson, B &amp; Tandon, A &amp; Gakidou, E &amp; J. L. Murray, C. (2010). Estimating Permanent Income Using Indicator Variables. Health Systems Performance Assessment: Debates, Methods and Empiricism.</p>

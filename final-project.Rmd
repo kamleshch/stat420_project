@@ -20,9 +20,12 @@ Loading the libraries required for this analysis
 ```{r message=FALSE, warning=FALSE}
 # install.packages("corrplot")
 # install.packages("PerformanceAnalytics")
+# install.packages("nortest")
 
 library(tidyverse)
 library(kableExtra)
+library(lmtest)
+library(nortest)
 ```
 
 ## Introduction to the dataset
@@ -170,11 +173,44 @@ The structure of the dataframe is:
 str(lcf_data)
 ```
 
-\
-\
-## Results
+### Model evaluation
 
-```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set"}
+The following functions will be used to evaluate the models.
+
+```{r}
+get_bp_decision = function(model, alpha = 0.01) { 
+  decide = unname(bptest(model)$p.value < alpha) 
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+# reject means residuals does not follow a normal distribution
+get_ad_decision = function(model) {
+  decide = unname(ad.test(resid(model))$p.value < 0.05)
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_sw_decision = function(model, alpha = 0.01) {
+ decide = unname(shapiro.test(resid(model))$p.value < alpha) 
+ ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_loocv_rmse = function(model) { 
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_rmse = function(model) {
+  mean(model$residuals ^ 2)
+}
+
+get_adj_r2 = function(model) { 
+  summary(model)$adj.r.squared
+}
+```
+
+
+### Variable selection
+
+```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set",warning=FALSE}
 PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
 ```
 
@@ -182,9 +218,29 @@ PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
 corrplot::corrplot(cor(lcf_data1), method="circle")
 ```
 
+The correlation and scatter plot shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, and to a letter extent with `noAdults`, and `NoChildren`. This is confirmed in the correlation matrix of Figure 2. Thus `hhsize` will be used as a potential predictor for the model in place of `noPersons`, `noAdults`, and `NoChildren`.
+
+Start with a simple additive model with all the predictors.
+
+```{r}
+add_model = lm(expenditure ~ income + hhsize + incomeSource + internet + economicHRP + SEC3Class + tenureType + sex_HRP, data = lcf_data)
+```
+
+Adjusted $R^2$ | RSME | LOOCV | Anderson-Darling Normality Test Result | Brausch-Pagan Test Result
+:------: | :------: | :------: | :------: | :------: 
+`r get_adj_r2(add_model)` | `r get_rmse(add_model)` | `r get_loocv_rmse(add_model)` | `r get_ad_decision(add_model)` | `r get_bp_decision(add_model)`
+
 
 \
 \
+
+## Results
+
+
+
+\
+\
+
 ## References
  
 <sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)
