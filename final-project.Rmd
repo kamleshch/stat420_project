@@ -1,5 +1,5 @@
 ---
-title: "UK Household Annual Expenditure Analysis"
+title: "UK Household Annual expenditure Analysis"
 author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
 date: ''
 output:
@@ -108,6 +108,9 @@ Loading data from the tab delimited file:
 ```{r}
 lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
 
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
+
 # Converting to factor variable
 # 1 = EarnedIncome
 # 2 = OtherIncome
@@ -143,13 +146,17 @@ lcf_data_raw$sex_HRP = as.factor(ifelse(lcf_data_raw$SexHRP==1, "Male", "Female"
 
 
 
+lcf_data_raw$noAdults = as.factor(lcf_data_raw$noAdults)
 
 
 lcf_data_raw$NoChildren = as.factor(ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore")))
 
+lcf_data_raw$Gorx = as.factor(lcf_data_raw$Gorx)
 
-colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
-colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
+
+lcf_data_raw = filter(lcf_data_raw,income > 0)
+
+
 
 # select columns
 cols = c("noAdults", "noPersons", "NoChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
@@ -186,6 +193,15 @@ Above results show, no missing values
 \
 \
 
+Since `expenditure` is top coded , removing top coded values.
+```{r}
+
+lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
+```
+
+\
+\
+
 
 
 ```{r}
@@ -198,11 +214,12 @@ ggplot(lcf_data,aes(y=expenditure,x=1))+geom_violin(fill="dodgerblue")
 
 
 ```{r,fig.height=16,fig.width=16}
-pairs(lcf_data)
+#pairs(lcf_data)
 ```
 
 \
 \
+
 
 ```{r}
 cor(lcf_data$hhsize,lcf_data$noPersons)
@@ -217,25 +234,13 @@ lcf_data$noPersons=NULL
 \
 \
 
-Since `income` & `expenditure` are corrlated , lets create a model first
-```{r}
-model_income = lm(expenditure ~ income , data = lcf_data)
-summary(model_income)
-```
-
-\
-\
-
-```{r warning=FALSE}
-ggplot(lcf_data,aes(x = income , y = expenditure))+
-  geom_point(col="darkorange") +
-  geom_abline(intercept = coef(model_income)[1],slope = coef(model_income)[2],lwd=1)+
-  annotate("text", x = 100, y=1100, label=paste("R2 = ",round(summary(model_income)$r.squared,3),sep = " "))
-  
-```
 
 
 ```{r}
+# This function takes the model as the input and test 
+# a) Normality 
+# b) Linearity
+# c) Constant variance
 assumption_test = function(model){
   par(mfrow=c(1,2))
   
@@ -247,27 +252,108 @@ assumption_test = function(model){
   qqnorm(resid(model),col="dodgerblue")
   qqline(resid(model),lwd=2,col="red")
   
-  print(paste("Shapiro-Wilk normality test :",shapiro.test(sample(resid(model),500,replace=FALSE))$p.value))
-  print(paste("BP test for constant variance :",bptest(model)$p.value))
+  #print(paste("Shapiro-Wilk normality test :",shapiro.test(sample(resid(model),500,replace=FALSE))$p.value))
+  #print(paste("BP test for constant variance :",bptest(model)$p.value))
 }
 ```
 
+
+
+lets create a additive model first
 ```{r}
-assumption_test(model_income)
-```
-
-
-
-```{r}
-model = lm(expenditure ~. , data = lcf_data)
+model = lm(expenditure ~ ., data = lcf_data)
 summary(model)
 ```
 
 
+Selecting only the important variables
 ```{r}
-model = lm(expenditure ~  income , data = lcf_data)
+model = lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+
 summary(model)
 ```
+
+
+\
+\
+
+
+
+```{r}
+assumption_test(model)
+```
+
+
+
+### Log Transformation
+
+```{r}
+
+
+model_log = lm(log(expenditure)~income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+summary(model_log)
+
+```
+
+
+```{r}
+assumption_test(model_log)
+```
+
+
+### BoxCox Transformation
+
+```{r warning=FALSE}
+library(MASS)
+model =lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+bc=boxcox(model,lambda = seq(-3,3))
+(lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
+```
+
+
+```{r}
+model = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_data)
+summary(model)
+```
+
+```{r,fig.width=8}
+assumption_test(model)
+```
+
+
+Fitted Vs Residual plot looks ok 
+
+```{r}
+coef(summary(model))
+```
+
+```{r}
+set.seed(420)
+no_of_obs = nrow(lcf_data)
+
+idx = sample(no_of_obs,no_of_obs*.80)
+
+train = lcf_data[idx,]
+test = lcf_data[-idx,]
+```
+
+
+```{r}
+model_train = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = train)
+
+
+# Train RMSE
+sqrt(mean((predict(model_train)^(1/lambda) - train$expenditure)^2))
+```
+
+
+
+```{r}
+# Test RMSE
+sqrt(mean((predict(model_train,newdata = test)^(1/lambda) - test$expenditure)^2))
+
+```
+
 
 
 
