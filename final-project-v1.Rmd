@@ -237,7 +237,7 @@ str(lcf_data)
 ```
 
 
-## Functions
+## Method
 
 The following functions are used to evaluate the models:
 
@@ -300,7 +300,7 @@ The correlation  shown in Figure 1 shows a strong correlation between `hhsize` a
 `hhsize` = `noPersons`
 
 \
-`noPersons` = `noChild` + `noAdult`
+`noPersons` = `noChildren` + `noAdult`
 \
 
 we will remove `noPersons` , `noAdult` ,`noChildren` from the dataset .
@@ -319,9 +319,9 @@ PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogra
 ```
 
 
-# Model Building
+## Model Building
 
-## Simple additive model with all variables
+### Simple additive model with all variables
 
 Lets create a additive model first
 ```{r}
@@ -372,7 +372,7 @@ We need to do a transformation to so that we are not violating the above assumpt
 
 First let's try log transformation
 
-### Log Transformation
+#### Log Transformation
 
 \
 First let's try log transformation
@@ -402,7 +402,7 @@ from the above graph ,
 \
 \
 
-### BoxCox Transformation
+#### BoxCox Transformation
 
 We will try Box-Cox transformation
 
@@ -474,7 +474,7 @@ model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn
 \
 \
 
-## Interaction Model Explanation
+### Interaction Model Explanation
 Start with a large model,
 
 ```{r}
