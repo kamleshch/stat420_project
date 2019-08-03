@@ -1,0 +1,611 @@
+---
+title: "UK Household Annual expenditure Analysis"
+author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
+date: ''
+output:
+  html_document: 
+    toc: yes
+  pdf_document: default
+urlcolor: cyan
+editor_options: 
+  chunk_output_type: console
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+\
+\
+
+# Introduction to the dataset
+
+The Living Costs and Food Survey (LCF) is an annual survey carried out in United Kingdom by [Office for National Statistics](https://www.ons.gov.uk/) since 1957. It collects data on spending pattern and the cost of living of households across UK.
+\
+\
+
+<center>![](https://www.denverlibrary.org/sites/dplorg/files/united_kingdom_map2.jpg){width=300}</center>
+
+\
+\
+
+## Data Collection Methodology
+
+The LCF sample for Great Britain is a multi-stage stratified random sample with clustering. Address with 'small user' postcodes are drawn from the postcode address file. The LCF sample for Northern Ireland, which is part for Great Britain is collected by the central survey unit of Northern Island Statistics and Research Agency(NISRA). A systematic random sample of private addresses is drawn from the land and property service agency property database.
+  
+  - LCF is a continuous survey which is collected throughout the year  to ensure seasonal effects are covered. 
+
+  - Randomly about 11,000 private households are selected each year.
+  
+  - Since it is completely voluntary, households can choose not to respond to the survey.
+  
+  - Every year on average about 50% of 11,000 households choose to respond to the survey
+  
+  - Volunteering household needs to fill a Household questionnaire, Individual questionnaire and dairy to track the daily expenditure for 2 weeks for all individuals aged 16 and over.
+  
+
+## Reason for this survey.
+
+The LCF provides information for the Retail Prices Index, National Accounts estimates of household expenditure, the analysis of the effect of taxes and benefits and trends in nutrition. The results, however, are multi-purpose, providing an invaluable supply of economic and social data. 
+
+## LCF Survey 2013
+
+The dataset <sup>1</sup> which we are analysing in this project is teaching dataset which is a subset of LCF 2013 survey. This dataset has been simplified for the purpose of learning and teaching. This dataset has been anonymised and deposited with the [UK data service](https://ukdataservice.ac.uk) and can be found [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+
+LCF 2013 survey has 5,144 respondents out of which 151 were from northern Ireland. Each row in the dataset contains observations from one household.
+\
+
+## Purpose of study
+
+Household spending is the amount of final consumption expenditure made by resident households to meet their everyday needs, such as food, clothing, housing (rent), energy, transport, durable goods (notably cars), health costs, leisure, and miscellaneous services. It is typically around 60% of gross domestic product (GDP) and is therefore an essential variable for economic analysis of demand <sup>2</sup>. 
+
+Economists have traditionally relied on reported household income and expenditure as preferred indicators of poverty and living standards but the use of such indicators can be problematic. Their measurement ususally require lengthly modules and detailed questions which are not practical for households with other priorities. Also the resulting data from those modules can contain errors or reporting biases. <sup>3</sup>
+
+As part of this study, we would like to infer the household expenditure based on income and other socioeconomic indicators of the household. The model built will be tested to determine how well it performs at predicting the expenditure of the household. 
+\
+
+## Variable definitions
+
+The variables in the original dataset are
+
+| Variable name | Variable label                                                        | Variable type |
+|---------------|-----------------------------------------------------------------------|---------------|
+| casenew       | Randomly generated case number                                        | Scalar        |
+| weighta       | Annual weight                                                         | Scalar        |
+| P550tpr       | Total expenditure, by adults & children (top-coded)                   | Scalar        |
+| P344pr        | Gross normal weekly household income (top-coded)                      | Scalar        |
+| P425r         | Main source of household income                                       | Nominal       |
+| A172          | Internet connection in household                                      | Nominal       |
+| A093r         | Economic position of Household Reference Person                       | Nominal       |
+| A094r         | NS-SEC 3 class of Household Reference Person                          | Nominal       |
+| A121r         | Tenure type                                                           | Nominal       |
+| SexHRP        | Sex of Household Reference Person                                     | Nominal       |
+| A049r         | Number of persons in household                                        | Ordinal       |
+| G018r         | Number of adults in household                                         | Ordinal       |
+| G019r         | Number of children in household                                       | Ordinal       |
+| Gorx          | Government Office Region - modified                                   | Nominal       |
+| weightar      | Weight (rescaled)                                                     | Scalar        |
+| maininc       | Main source of household income (recoded, P425-1)                     | Nominal       |
+| income        | Income                                                                | Scalar        |
+| expenditure   | Total expenditure (top coded, formerly P550tpr) **RESPONSE**          | Scalar        |
+| hhsize        | Household size, number of people in household (recoded)formerly A049r | Nominal       |
+
+\
+\
+
+# Methods
+
+## Loading necessary libraries
+
+Following r chunk will load all the libraries necessary for the analysis that follows. This includes library to create graphics - `tidyverse`, library with collection of tests for diagnostic checking in linear regression models - `lmtest` to name a few.
+
+```{r message=FALSE, warning=FALSE}
+# install.packages("corrplot")
+# install.packages("PerformanceAnalytics")
+
+library(tidyverse)
+library(kableExtra)
+library(lmtest)
+library(MASS)
+```
+\
+
+## Data cleanup
+
+### Loading the dataset in R
+This dataset was obtained from UK data service and can be found [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details). Following r chunk will load the data from Tab separated file after excluding the header
+```{r}
+lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
+```
+\
+
+### Rename column names for better readability
+Data from the source does not have a unified naming convention for the data. Renaming the columns provided an easier way to not only look at the data but to reference it within the model.
+```{r}
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="P425r"] = "incomeSource"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A172"] = "internet"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A093r"] = "economicHRP"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A094r"] = "SEC3Class"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A121r"] = "tenureType"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="SexHRP"] = "sex_HRP"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G019r"] = "noChildren"
+```
+
+
+### Update data attributes for better understanding
+We have updated the data to reflect their appropriate term as it's easier to understand when processing the data. Correct definitions were found in the survey documentation [here](https://beta.ukdataservice.ac.uk/datacatalogue/studies/study?id=7932#!/details).
+```{r}
+# Converting to factor variable
+# Income Source
+# 1 = EarnedIncome
+# 2 = OtherIncome
+lcf_data_raw$incomeSource = ifelse(lcf_data_raw$incomeSource==1,"EarnedIncome","OtherIncome")
+lcf_data_raw$incomeSource = as.factor(lcf_data_raw$incomeSource)
+
+# Internet Conncetion in household
+# 1 - Yes
+# 2 - No
+lcf_data_raw$internet = ifelse(lcf_data_raw$internet==1, "Yes", "No")
+lcf_data_raw$internet = as.factor(lcf_data_raw$internet)
+
+# Economic position of Household Reference Person
+# 1 - Full-time working
+# 2 - Part-time working
+# 3 - Unemployed and work related Government Training Programmes
+# 4 - Economically inactive
+lcf_data_raw$economicHRP = ifelse(lcf_data_raw$economicHRP==1,"FullTime",ifelse(lcf_data_raw$economicHRP==2,"PartTime",ifelse(lcf_data_raw$economicHRP==3,"Unemployed","EconomicallyInactive")))
+lcf_data_raw$economicHRP = as.factor(lcf_data_raw$economicHRP)
+
+# Class of Household Reference Person
+# 1 - Higher managerial, administrative and professional occupations
+# 2 - Intermediate occupations
+# 3 - Routine and manual occupations
+# 4 - Never worked and long term unemployed, students and occupation not stated
+# 5 - Not classified for other reasons
+lcf_data_raw$SEC3Class = ifelse(lcf_data_raw$SEC3Class==1, "Class1", ifelse(lcf_data_raw$SEC3Class==2, "Class2", ifelse(lcf_data_raw$SEC3Class==3, "Class3", ifelse(lcf_data_raw$SEC3Class==4, "Class 4", "Class 5"))))
+lcf_data_raw$SEC3Class = as.factor(lcf_data_raw$SEC3Class)
+
+# Tenure Type
+# 1 - Public Rented
+# 2 - Private Rented
+# 3 - Owned
+lcf_data_raw$tenureType = ifelse(lcf_data_raw$tenureType==1, "PublicRented", ifelse(lcf_data_raw$tenureType==2, "PrivateRented", "Owned"))
+lcf_data_raw$tenureType = as.factor(lcf_data_raw$tenureType)
+
+# Sex of household reference person
+# 1 - Male
+# 2 - Female
+lcf_data_raw$sex_HRP = ifelse(lcf_data_raw$sex_HRP==1, "Male", "Female")
+lcf_data_raw$sex_HRP = as.factor(lcf_data_raw$sex_HRP)
+
+
+# Number of children in the household
+#lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
+#lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
+
+
+# expenditure is top coded so removing those values
+#lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
+
+```
+\
+
+### Attribute exclusion for further analysis
+```{r}
+str(lcf_data_raw)
+# remove rows that have zero income
+lcf_data_raw = lcf_data_raw[lcf_data_raw$income > 0,]
+
+# select columns
+cols = c("noAdults", "noPersons", "noChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
+lcf_data = lcf_data_raw[cols]
+```
+
+
+### Test-Train data split
+```{r}
+# training and testing datasets
+set.seed(420)
+
+# Splitting the lcf dataset into train & test . 80% data goes to train & 20% data goes to test.
+lcf_trn_idx = sample(nrow(lcf_data), size = trunc(0.80 * nrow(lcf_data)))
+lcf_trn_data = lcf_data[lcf_trn_idx, ]
+lcf_tst_data = lcf_data[-lcf_trn_idx, ]
+```
+
+### Final data used for analysis
+
+Sample data:
+```{r}
+head(lcf_data) %>% 
+  kable() %>% kable_styling(c("striped","bordered"))
+```
+\
+
+The structure of the dataframe is:
+```{r}
+str(lcf_data)
+```
+
+
+## Functions
+
+The following functions are used to evaluate the models:
+
+- Breusch-Pagan test (`bptest`)
+
+- Shapiro-Wilk test
+
+- Leave-one-out cross-validated Root Mean Square Error (`LOOCV RMSE`)
+
+- Root Mean Square Error (`RMSE`)
+
+- Adjusted R squared (`Adjusted $R^2$`)
+
+- Function to plot normality, linearity & constant variance
+
+```{r}
+
+get_bp_decision = function(model, alpha = 0.01) { 
+  decide = unname(bptest(model)$p.value < alpha) 
+  ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_sw_decision = function(model, alpha = 0.01) {
+ decide = unname(shapiro.test(resid(model))$p.value < alpha) 
+ ifelse(decide, "Reject", "Fail to Reject")
+}
+
+get_loocv_rmse = function(model) { 
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+get_rmse = function(model) {
+  mean(model$residuals ^ 2)
+}
+
+get_adj_r2 = function(model) { 
+  summary(model)$adj.r.squared
+}
+
+
+# This function takes the model as the input and test 
+# a) Normality 
+# b) Linearity
+# c) Constant variance
+assumption_test = function(model){
+  par(mfrow=c(1,2))
+  
+  # Fitted vs residual plot
+  plot(fitted.values(model),resid(model),col="dodgerblue", xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Residuals")
+  abline(h=0,col="red",lwd=2)
+  
+  # QQ plot to test normality
+  qqnorm(resid(model),col="dodgerblue")
+  qqline(resid(model),lwd=2,col="red")
+}
+```
+\
+
+## Exploratory Data Analysis
+
+First we see any correlation between the numeric varaiables, this will help us removing the highly corrleated variables.
+
+```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set",warning=FALSE}
+PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogram = TRUE, pch = 19)
+```
+
+
+
+The correlation  shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, referring to the documentation shows that are they capture the same data.
+\
+
+`hhsize` = `noPersons`
+
+\
+`noPersons` = `noChild` + `noAdult`
+\
+
+we will remove `noPersons` , `noAdult` ,`noChildren` from the dataset .
+```{r}
+# Deleting the columns
+lcf_data$noPersons = NULL
+lcf_data$noAdults = NULL
+lcf_data$noChildren = NULL
+```
+
+\
+
+Lets do a correlation plot one more time
+```{r}
+PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogram = TRUE, pch = 19)
+```
+
+
+# Model Building
+
+## Simple additive model with all variables
+
+Lets create a additive model first
+```{r}
+model_add_all = lm(expenditure ~ ., data = lcf_data)
+summary(model_add_all)
+```
+\
+
+Selecting only the important variables from the above model. Having a smaller model will help interpret the results.
+```{r}
+
+model_add= lm(formula = expenditure ~ income + hhsize +internet, data = lcf_data)
+summary(model_add)
+
+```
+
+With just the important variable, $R^2$ did not go down much. Since above simple additive model will help us understand how expenditure is explained by other factor.
+
+\
+\
+
+
+```{r fig.cap="Figure 3 - Residuals vs Fitted and Normal QQ Plot for the model"}
+assumption_test(model_add)
+```
+
+
+\
+
+To infer from the model , assumptions of linear model should be met.
+
+
+* L - Response is **Linear** combination of Predictors
+
+* I - the erros are **Independent**
+
+* N - the error should follow **Normal** distribution
+
+* E - the error variance is **Equal** (constant) at any set of predictor values
+
+\
+
+From the fitted Vs Residual plot, 
+  * it seems constant varaiance is a suspect.
+  * Normality is suspect
+
+We need to do a transformation to so that we are not violating the above assumptions.
+
+First let's try log transformation
+
+### Log Transformation
+
+\
+First let's try log transformation
+
+```{r}
+
+# Log transformation of response variable
+model_log = lm(log(expenditure)~ income + hhsize + internet, data = lcf_data)
+
+
+summary(model_log)
+
+```
+
+
+
+```{r fig.cap="Figure 4 - Residuals vs Fitted and Normal QQ Plot for the log transformed model"}
+# We  will leverage the function we create prior to test if the linear model assumtions are violating
+assumption_test(model_log)
+```
+\
+from the above graph , 
+
+* Normality is **NOT a suspect** as error follow theoretical quantiles.
+* Constant variance of error is **suspect** , as error are not evenly distributes for all fitted values.
+
+\
+\
+
+### BoxCox Transformation
+
+We will try Box-Cox transformation
+
+The Box-Cox method considers a family of transformations on strictly positive response variables,
+$$
+g_\lambda(y) = \left\{
+\begin{array}{lr}\displaystyle\frac{y^\lambda - 1}{\lambda} &  \lambda \neq 0\\
+        & \\
+       \log(y) &  \lambda = 0
+     \end{array}
+   \right.
+$$
+   
+   The  λ parameter is chosen by numerically maximizing the log-likelihood,
+
+
+
+```{r warning=FALSE,fig.cap="Figure 5 - BoxCox for the simple model"}
+model =lm(expenditure ~ income + hhsize + internet, data = lcf_data)
+bc=boxcox(model,lambda = seq(-3,3))
+(lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
+```
+
+
+```{r}
+model_bc = lm((expenditure^lambda) ~ ( income + hhsize + internet), data = lcf_data)
+summary(model_bc)
+```
+\
+
+```{r,fig.width=12,fig.cap="Figure 6 - Residuals vs Fitted and Normal QQ Plot for the BoxCox transformed model"}
+# We  will leverage the function we create prior to test if the linear model assumtions are violating
+assumption_test(model_bc)
+```
+
+\
+
+
+
+Eventhough we see little bit inconsistent in the varaiance, generally it looks ok. 
+
+* Normality is **NOT** a suspect.
+* Constant variance is **NOT** a suspect.
+
+\
+\
+
+**** 
+
+Based on the above model, lets find the Train RMSE & Test RMSE.Test RMSE will tell how well the model is performing in the unseen data.
+
+```{r}
+# Building the model using only the training data
+model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn_data)
+
+
+# Train RMSE - prediction on Train using the model build on train dataset
+(train_rmse = sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2)))
+```
+
+
+
+```{r}
+# Test RMSE - Prediction on the Test dataset which is not used for prediction.
+# This is a good assessemnet on how this model will perform in the unseen data
+(test_rmse =sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2)))
+
+```
+\
+\
+
+## Interaction Model Explanation
+Start with a large model,
+
+```{r}
+large_model = lm(expenditure ~ I(income ^ 2) + I(hhsize ^ 2) + (income + hhsize + internet + economicHRP + SEC3Class + tenureType + sex_HRP)^2, data = lcf_trn_data)
+```
+
+Performing backward AIC on the model,
+
+```{r}
+large_model_back_aic = step(large_model, direction = "backward", trace = 0)
+```
+
+and backward BIC on the model,
+
+```{r}
+large_model_back_bic = step(large_model, direction = "backward", trace = 0, k = log(length(resid(large_model))))
+```
+
+The characteristices of the models are
+
+Characteristic | Large Model | Model from backward AIC | Model from backward BIC
+------ | ------ | ------ | ------
+Number of predictors | `r length(coef(large_model))` | `r length(coef(large_model_back_aic))` | `r length(coef(large_model_back_bic))`
+Adjusted $R^2$ | `r get_adj_r2(large_model)` | `r get_adj_r2(large_model_back_aic)` | `r get_adj_r2(large_model_back_bic)`
+LOOCV RMSE | `r get_loocv_rmse(large_model)` | `r get_loocv_rmse(large_model_back_aic)` | `r get_loocv_rmse(large_model_back_bic)`
+Shapiro-Wilks Test | `r get_sw_decision(large_model)` | `r get_sw_decision(large_model_back_aic)` | `r get_sw_decision(large_model_back_bic)`
+BP Test | `r get_bp_decision(large_model)` | `r get_bp_decision(large_model_back_aic)` | `r get_bp_decision(large_model_back_bic)`
+
+The model obtained from the backward AIC search has the lower LOOCV RMSE and higher Adjusted $R^2$. It did not pass the Shapiro-Wilks and BP tests. The Fitted vs Residual plot and the Normal QQ Plot (figure 7) were then looked at for this model.
+
+```{r,fig.width=8,fig.cap="Figure 7 - Residuals vs Fitted and Normal QQ Plot for the model obtained from backward AIC search"}
+assumption_test(large_model_back_aic)
+```
+
+Figure 7 shows that the constant variance assumption is violated since there is not an even spread of the residuals about the zero line. The plot also shows that the normality assumption is violated.
+
+These results indicate that a transformation of the response is required. Performing a BoxCox transformation on the model,
+
+```{r fig.cap="Figure 8"}
+bc = boxcox(large_model_back_aic, plotit = TRUE, lambda = seq(0, 0.3, by = 0.1))
+inter_lambda = bc$x[which.max(bc$y)]
+```
+
+indicates that the value of $\lambda$ in $\frac{{y^\lambda}-1}{\lambda}$ is `r inter_lambda`. Applying this transformation to the large model,
+
+```{r}
+large_model_trans = lm((((expenditure ^ inter_lambda)-1)/inter_lambda) ~ I(income ^ 2) + I(hhsize ^ 2) + (income + hhsize + internet + economicHRP + SEC3Class + tenureType + sex_HRP)^2, data = lcf_trn_data)
+```
+
+and performing a backward search using AIC,
+
+```{r}
+large_model_trans_back_aic = step(large_model_trans, direction = "backward", trace = 0)
+```
+
+and a backward search using BIC,
+
+```{r}
+large_model_trans_back_bic = step(large_model_trans, direction = "backward", trace = 0, k = log(length(resid(large_model_trans))))
+```
+
+yields the following results
+
+Characteristic | Large Model | Model from backward AIC | Model from backward BIC
+------ | ------ | ------ | ------
+Number of predictors | `r length(coef(large_model_trans))` | `r length(coef(large_model_trans_back_aic))` | `r length(coef(large_model_trans_back_bic))`
+Adjusted $R^2$ | `r get_adj_r2(large_model_trans)` | `r get_adj_r2(large_model_trans_back_aic)` | `r get_adj_r2(large_model_trans_back_bic)`
+LOOCV RMSE | `r get_loocv_rmse(large_model_trans)` | `r get_loocv_rmse(large_model_trans_back_aic)` | `r get_loocv_rmse(large_model_trans_back_bic)`
+Shapiro-Wilks Test | `r get_sw_decision(large_model_trans)` | `r get_sw_decision(large_model_trans_back_aic)` | `r get_sw_decision(large_model_trans_back_bic)`
+BP Test | `r get_bp_decision(large_model_trans)` | `r get_bp_decision(large_model_trans_back_aic)` | `r get_bp_decision(large_model_trans_back_bic)`
+
+The LOOCV RMSE values obtained are lower than those obtained before the transformation and the $R^2$ value has increased. The Shapiro-Wilks and the BP tests are not passed by these models however. 
+
+The model chosen by the backward BIC search is smaller and has similar LOOCV RMSE and Adjusted $R^2$ values to the backward AIC search and so will be used. The Fitted vs Residual plot and the Normal QQ Plot (figure 9) were then looked at for this model.
+
+```{r,fig.width=8,fig.cap="Figure 9 - Residuals vs Fitted and Normal QQ Plot for the model obtained from backward BIC search"}
+assumption_test(large_model_trans_back_bic)
+```
+
+The plots show that the model assumptions are not being violated. This model was then tested to see how well it performed on predicting the `expediture` using the test dataset.
+
+```{r}
+large_model_trans_back_bic_prediction = ((inter_lambda * predict(large_model_trans_back_bic, newdata = lcf_tst_data))+1)^(1/inter_lambda)
+large_model_trans_back_bic_prediction_diff = (lcf_tst_data[,"expenditure"]-large_model_trans_back_bic_prediction)/lcf_tst_data[,"expenditure"]
+```
+
+The plot of the difference between the `expenditure` value predicted by the model and the actual values are shown in figure 10.
+
+```{r echo=FALSE,fig.cap="Figure 10 - difference between predicted and actual values"}
+plot(large_model_trans_back_bic_prediction_diff, xlab = "", ylab = "", main = "Difference between actual and predicted values", col="dodgerblue")
+abline(h=0, col="red")
+```
+
+The plot shows that the predicted values are very close to the actual values and so the model is a good candidate to explain the relationship among these variables.
+
+## Comparing the models
+The RMSE for the additive model and the interaction model are
+
+Model | RMSE on training data | RMSE on test data
+------ | ------ | ------
+Additive | `r sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))` | `r sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))`
+Interaction | `r sqrt(mean((fitted.values(large_model_trans_back_bic) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))`
+
+
+\
+\
+
+# Results
+
+
+
+\
+\
+
+
+# References
+ 
+<sup>1</sup> University of Manchester, Cathie Marsh Institute for Social Research (CMIST), UK Data Service, Office for National Statistics. (2019). Living Costs and Food Survey, 2013: Unrestricted Access Teaching Dataset. [data collection]. 2nd Edition. Office for National Statistics, [original data producer(s)]. Office for National Statistics. SN: 7932, [http://doi.org/10.5255/UKDA-SN-7932-2](http://doi.org/10.5255/UKDA-SN-7932-2)
+
+<sup>2</sup> Organisation for Economic Co-operation and Development. "Household Accounts - Household Spending". oecd.org. [https://data.oecd.org/hha/household-spending.htm](https://data.oecd.org/hha/household-spending.htm) (Accessed July 21st 2019).
+
+<sup>3</sup> D. Ferguson, B & Tandon, A & Gakidou, E & J. L. Murray, C. (2010). Estimating Permanent Income Using Indicator Variables. Health Systems Performance Assessment: Debates, Methods and Empiricism.
