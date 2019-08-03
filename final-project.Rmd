@@ -20,12 +20,11 @@ Loading the libraries required for this analysis
 ```{r message=FALSE, warning=FALSE}
 # install.packages("corrplot")
 # install.packages("PerformanceAnalytics")
-# install.packages("nortest")
 
 library(tidyverse)
 library(kableExtra)
 library(lmtest)
-library(nortest)
+library(MASS)
 ```
 
 ## Introduction to the dataset
@@ -35,6 +34,7 @@ The Living Costs and Food Survey (LCF) is an annual survey carried out in United
 \
 
 <center>![](https://www.denverlibrary.org/sites/dplorg/files/united_kingdom_map2.jpg){width=300}</center>
+
 \
 \
 
@@ -112,28 +112,56 @@ Loading data from the tab delimited file:
 ```{r}
 lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
 
+# Converting to factor variable
+# Income Source
+# 1 = EarnedIncome
+# 2 = OtherIncome
 lcf_data_raw$incomeSource = ifelse(lcf_data_raw$P425r==1,"EarnedIncome","OtherIncome")
 lcf_data_raw$incomeSource = as.factor(lcf_data_raw$incomeSource)
 
+# Internet Conncetion in household
+# 1 - Yes
+# 2 - No
 lcf_data_raw$internet = ifelse(lcf_data_raw$A172==1, "Yes", "No")
 lcf_data_raw$internet = as.factor(lcf_data_raw$internet)
 
+# Economic position of Household Reference Person
+# 1 - Full-time working
+# 2 - Part-time working
+# 3 - Unemployed and work related Government Training Programmes
+# 4 - Economically inactive
 lcf_data_raw$economicHRP = ifelse(lcf_data_raw$A093r==1,"FullTime",ifelse(lcf_data_raw$A093r==2,"PartTime",ifelse(lcf_data_raw$A093r==3,"Unemployed","EconomicallyInactive")))
 lcf_data_raw$economicHRP = as.factor(lcf_data_raw$economicHRP)
 
+# Class of Household Reference Person
+# 1 - Higher managerial, administrative and professional occupations
+# 2 - Intermediate occupations
+# 3 - Routine and manual occupations
+# 4 - Never worked and long term unemployed, students and occupation not stated
+# 5 - Not classified for other reasons
 lcf_data_raw$SEC3Class = ifelse(lcf_data_raw$A094r==1, "Class1", ifelse(lcf_data_raw$A094r==2, "Class2", ifelse(lcf_data_raw$A094r==3, "Class3", ifelse(lcf_data_raw$A094r==4, "Class 4", "Class 5"))))
 lcf_data_raw$SEC3Class = as.factor(lcf_data_raw$SEC3Class)
 
+# Tenure Type
+# 1 - Public Rented
+# 2 - Private Rented
+# 3 - Owned
 lcf_data_raw$tenureType = ifelse(lcf_data_raw$A121r==1, "PublicRented", ifelse(lcf_data_raw$A121r==2, "PrivateRented", "Owned"))
 lcf_data_raw$tenureType = as.factor(lcf_data_raw$tenureType)
 
+# Sex of household reference person
+# 1 - Male
+# 2 - Female
 lcf_data_raw$sex_HRP = ifelse(lcf_data_raw$SexHRP==1, "Male", "Female")
 lcf_data_raw$sex_HRP = as.factor(lcf_data_raw$sex_HRP)
 
-lcf_data_raw$A049r = as.factor(lcf_data_raw$A049r) # number of persons in the household
+# number of persons in the household
+lcf_data_raw$A049r = as.factor(lcf_data_raw$A049r) 
 
-lcf_data_raw$G018r = as.factor(lcf_data_raw$G018r) # number of adults in the household
+# number of adults in the household
+lcf_data_raw$G018r = as.factor(lcf_data_raw$G018r) 
 
+# Number of children in the household
 lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
 lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
 
@@ -143,6 +171,18 @@ colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
 # select columns
 cols = c("noAdults", "noPersons", "NoChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
 lcf_data = lcf_data_raw[cols]
+
+# remove rows that have zero income
+lcf_data = lcf_data[lcf_data$income > 0,]
+
+# expenditure is top coded so removing those values
+# lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
+
+# training and testing datasets
+set.seed(420)
+lcf_trn_idx = sample(nrow(lcf_data), size = trunc(0.80 * nrow(lcf_data)))
+lcf_trn_data = lcf_data[lcf_trn_idx, ]
+lcf_tst_data = lcf_data[-lcf_trn_idx, ]
 
 # create a dataframe with the factor variables as numeric for correlation plots
 lcf_data1 = lcf_data
@@ -183,12 +223,6 @@ get_bp_decision = function(model, alpha = 0.01) {
   ifelse(decide, "Reject", "Fail to Reject")
 }
 
-# reject means residuals does not follow a normal distribution
-get_ad_decision = function(model) {
-  decide = unname(ad.test(resid(model))$p.value < 0.05)
-  ifelse(decide, "Reject", "Fail to Reject")
-}
-
 get_sw_decision = function(model, alpha = 0.01) {
  decide = unname(shapiro.test(resid(model))$p.value < alpha) 
  ifelse(decide, "Reject", "Fail to Reject")
@@ -205,10 +239,26 @@ get_rmse = function(model) {
 get_adj_r2 = function(model) { 
   summary(model)$adj.r.squared
 }
+
+# This function takes the model as the input and test 
+# a) Normality 
+# b) Linearity
+# c) Constant variance
+assumption_test = function(model){
+  par(mfrow=c(1,2))
+  
+  # Fitted vs residual plot
+  plot(fitted.values(model),resid(model),col="dodgerblue", xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Residuals")
+  abline(h=0,col="red",lwd=2)
+  
+  # QQ plot to test normality
+  qqnorm(resid(model),col="dodgerblue")
+  qqline(resid(model),lwd=2,col="red")
+}
 ```
 
 
-### Variable selection
+## Exploratory Analysis
 
 ```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set",warning=FALSE}
 PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
@@ -218,17 +268,205 @@ PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
 corrplot::corrplot(cor(lcf_data1), method="circle")
 ```
 
-The correlation and scatter plot shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, and to a letter extent with `noAdults`, and `NoChildren`. This is confirmed in the correlation matrix of Figure 2. Thus `hhsize` will be used as a potential predictor for the model in place of `noPersons`, `noAdults`, and `NoChildren`.
-
-Start with a simple additive model with all the predictors.
-
+The correlation and scatter plot shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, and to a letter extent with `noAdults`, and `NoChildren`. This is also shown in the correlation matrix of Figure 2. 
 ```{r}
-add_model = lm(expenditure ~ income + hhsize + incomeSource + internet + economicHRP + SEC3Class + tenureType + sex_HRP, data = lcf_data)
+cor(lcf_data1$hhsize,lcf_data1$noPersons)
+
+sum(!lcf_data1$hhsize == lcf_data1$noPersons)
+```
+This shows that `hhsize` and `noPersons` have the same data values.
+Thus `hhsize` will be used as a potential predictor for the model in place of `noPersons`, `noAdults`, and `NoChildren`.
+
+## Model Building
+
+### Simple Model Explanation
+Lets create a additive model first
+```{r}
+model = lm(expenditure ~ ., data = lcf_data)
+summary(model)
 ```
 
-Adjusted $R^2$ | RSME | LOOCV | Anderson-Darling Normality Test Result | Brausch-Pagan Test Result
-:------: | :------: | :------: | :------: | :------: 
-`r get_adj_r2(add_model)` | `r get_rmse(add_model)` | `r get_loocv_rmse(add_model)` | `r get_ad_decision(add_model)` | `r get_bp_decision(add_model)`
+
+Selecting only the important variables
+```{r}
+model = lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+
+summary(model)
+```
+
+
+\
+\
+
+
+
+```{r fig.cap="Figure 3 - Residuals vs Fitted and Normal QQ Plot for the model"}
+assumption_test(model)
+```
+
+
+
+#### Log Transformation
+
+```{r}
+
+
+model_log = lm(log(expenditure)~income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+summary(model_log)
+
+```
+
+
+```{r fig.cap="Figure 4 - Residuals vs Fitted and Normal QQ Plot for the log transformed model"}
+assumption_test(model_log)
+```
+
+
+#### BoxCox Transformation
+
+```{r warning=FALSE,fig.cap="Figure 5 - BoxCox for the simple model"}
+model =lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+bc=boxcox(model,lambda = seq(-3,3))
+(lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
+```
+
+
+```{r}
+model = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_data)
+summary(model)
+```
+
+```{r,fig.width=8,fig.cap="Figure 6 - Residuals vs Fitted and Normal QQ Plot for the BoxCox transformed model"}
+assumption_test(model)
+```
+
+
+Fitted Vs Residual plot looks ok 
+
+```{r}
+coef(summary(model))
+```
+
+
+```{r}
+model_train = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_trn_data)
+
+
+# Train RMSE
+sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))
+```
+
+
+
+```{r}
+# Test RMSE
+sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))
+
+```
+
+### Interaction Model Explanation
+Start with a large model,
+
+```{r}
+large_model = lm(expenditure ~ I(income ^ 2) + I(hhsize ^ 2) + (income + hhsize + internet + economicHRP + SEC3Class + tenureType + sex_HRP)^2, data = lcf_trn_data)
+```
+
+Performing backward AIC on the model,
+
+```{r}
+large_model_back_aic = step(large_model, direction = "backward", trace = 0)
+```
+
+and backward BIC on the model,
+
+```{r}
+large_model_back_bic = step(large_model, direction = "backward", trace = 0, k = log(length(resid(large_model))))
+```
+
+The characteristices of the models are
+
+Characteristic | Large Model | Model from backward AIC | Model from backward BIC
+------ | ------ | ------ | ------
+Number of predictors | `r length(coef(large_model))` | `r length(coef(large_model_back_aic))` | `r length(coef(large_model_back_bic))`
+Adjusted $R^2$ | `r get_adj_r2(large_model)` | `r get_adj_r2(large_model_back_aic)` | `r get_adj_r2(large_model_back_bic)`
+LOOCV RMSE | `r get_loocv_rmse(large_model)` | `r get_loocv_rmse(large_model_back_aic)` | `r get_loocv_rmse(large_model_back_bic)`
+Shapiro-Wilks Test | `r get_sw_decision(large_model)` | `r get_sw_decision(large_model_back_aic)` | `r get_sw_decision(large_model_back_bic)`
+BP Test | `r get_bp_decision(large_model)` | `r get_bp_decision(large_model_back_aic)` | `r get_bp_decision(large_model_back_bic)`
+
+The model obtained from the backward AIC search has the lower LOOCV RMSE and higher Adjusted $R^2$. It did not pass the Shapiro-Wilks and BP tests. The Fitted vs Residual plot and the Normal QQ Plot (figure 7) were then looked at for this model.
+
+```{r,fig.width=8,fig.cap="Figure 7 - Residuals vs Fitted and Normal QQ Plot for the model obtained from backward AIC search"}
+assumption_test(large_model_back_aic)
+```
+
+Figure 7 shows that the constant variance assumption is violated since there is not an even spread of the residuals about the zero line. The plot also shows that the normality assumption is violated.
+
+These results indicate that a transformation of the response is required. Performing a BoxCox transformation on the model,
+
+```{r fig.cap="Figure 8"}
+bc = boxcox(large_model_back_aic, plotit = TRUE, lambda = seq(0, 0.3, by = 0.1))
+inter_lambda = bc$x[which.max(bc$y)]
+```
+
+indicates that the value of $\lambda$ in $\frac{{y^\lambda}-1}{\lambda}$ is `r inter_lambda`. Applying this transformation to the large model,
+
+```{r}
+large_model_trans = lm((((expenditure ^ inter_lambda)-1)/inter_lambda) ~ I(income ^ 2) + I(hhsize ^ 2) + (income + hhsize + internet + economicHRP + SEC3Class + tenureType + sex_HRP)^2, data = lcf_trn_data)
+```
+
+and performing a backward search using AIC,
+
+```{r}
+large_model_trans_back_aic = step(large_model_trans, direction = "backward", trace = 0)
+```
+
+and a backward search using BIC,
+
+```{r}
+large_model_trans_back_bic = step(large_model_trans, direction = "backward", trace = 0, k = log(length(resid(large_model_trans))))
+```
+
+yields the following results
+
+Characteristic | Large Model | Model from backward AIC | Model from backward BIC
+------ | ------ | ------ | ------
+Number of predictors | `r length(coef(large_model_trans))` | `r length(coef(large_model_trans_back_aic))` | `r length(coef(large_model_trans_back_bic))`
+Adjusted $R^2$ | `r get_adj_r2(large_model_trans)` | `r get_adj_r2(large_model_trans_back_aic)` | `r get_adj_r2(large_model_trans_back_bic)`
+LOOCV RMSE | `r get_loocv_rmse(large_model_trans)` | `r get_loocv_rmse(large_model_trans_back_aic)` | `r get_loocv_rmse(large_model_trans_back_bic)`
+Shapiro-Wilks Test | `r get_sw_decision(large_model_trans)` | `r get_sw_decision(large_model_trans_back_aic)` | `r get_sw_decision(large_model_trans_back_bic)`
+BP Test | `r get_bp_decision(large_model_trans)` | `r get_bp_decision(large_model_trans_back_aic)` | `r get_bp_decision(large_model_trans_back_bic)`
+
+The LOOCV RMSE values obtained are lower than those obtained before the transformation and the $R^2$ value has increased. The Shapiro-Wilks and the BP tests are not passed by these models however. 
+
+The model chosen by the backward BIC search is smaller and has similar LOOCV RMSE and Adjusted $R^2$ values to the backward AIC search and so will be used. The Fitted vs Residual plot and the Normal QQ Plot (figure 9) were then looked at for this model.
+
+```{r,fig.width=8,fig.cap="Figure 9 - Residuals vs Fitted and Normal QQ Plot for the model obtained from backward BIC search"}
+assumption_test(large_model_trans_back_bic)
+```
+
+The plots show that the model assumptions are not being violated. This model was then tested to see how well it performed on predicting the `expediture` using the test dataset.
+
+```{r}
+large_model_trans_back_bic_prediction = ((inter_lambda * predict(large_model_trans_back_bic, newdata = lcf_tst_data))+1)^(1/inter_lambda)
+large_model_trans_back_bic_prediction_diff = (lcf_tst_data[,"expenditure"]-large_model_trans_back_bic_prediction)/lcf_tst_data[,"expenditure"]
+```
+
+The plot of the difference between the `expenditure` value predicted by the model and the actual values are shown in figure 10.
+
+```{r echo=FALSE,fig.cap="Figure 10 - difference between predicted and actual values"}
+plot(large_model_trans_back_bic_prediction_diff, xlab = "", ylab = "", main = "Difference between actual and predicted values", col="dodgerblue")
+abline(h=0, col="red")
+```
+
+The plot shows that the predicted values are very close to the actual values and so the model is a good candidate to explain the relationship among these variables.
+
+### Comparing the models
+The RMSE for the additive model and the interaction model are
+
+Model | RMSE on training data | RMSE on test data
+------ | ------ | ------
+Additive | `r sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))` | `r sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))`
+Interaction | `r sqrt(mean((fitted.values(large_model_trans_back_bic) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))`
 
 
 \
