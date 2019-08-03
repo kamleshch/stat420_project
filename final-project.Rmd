@@ -11,6 +11,14 @@ editor_options:
   chunk_output_type: console
 ---
 
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -81,7 +89,7 @@ As part of this study, we would like to infer the household expenditure based on
 
 ## Variable definitions
 
-The variables in the dataset are
+The variables in the original dataset are
 
 | Variable name | Variable label                                                        | Variable type |
 |---------------|-----------------------------------------------------------------------|---------------|
@@ -112,6 +120,15 @@ The variables in the dataset are
 Loading data from the tab delimited file:
 ```{r}
 lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
+
+
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G019r"] = "noChildren"
+colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
+
+
+# remove rows that have zero income
+lcf_data_raw = lcf_data_raw[lcf_data_raw$income > 0,]
 
 # Converting to factor variable
 # Income Source
@@ -156,45 +173,21 @@ lcf_data_raw$tenureType = as.factor(lcf_data_raw$tenureType)
 lcf_data_raw$sex_HRP = ifelse(lcf_data_raw$SexHRP==1, "Male", "Female")
 lcf_data_raw$sex_HRP = as.factor(lcf_data_raw$sex_HRP)
 
-# number of persons in the household
-lcf_data_raw$A049r = as.factor(lcf_data_raw$A049r) 
-
-# number of adults in the household
-lcf_data_raw$G018r = as.factor(lcf_data_raw$G018r) 
 
 # Number of children in the household
-lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
-lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
+#lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
+#lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
 
 
 # select columns
-cols = c("noAdults", "noPersons", "NoChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
+cols = c("noAdults", "noPersons", "noChildren", "income", "expenditure", "hhsize", "incomeSource", "internet", "economicHRP", "SEC3Class", "tenureType", "sex_HRP")
 lcf_data = lcf_data_raw[cols]
 
-# remove rows that have zero income
-lcf_data = lcf_data[lcf_data$income > 0,]
+
 
 # expenditure is top coded so removing those values
-# lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
+#lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
 
-# training and testing datasets
-set.seed(420)
-lcf_trn_idx = sample(nrow(lcf_data), size = trunc(0.80 * nrow(lcf_data)))
-lcf_trn_data = lcf_data[lcf_trn_idx, ]
-lcf_tst_data = lcf_data[-lcf_trn_idx, ]
-
-# create a dataframe with the factor variables as numeric for correlation plots
-lcf_data1 = lcf_data
-lcf_data1$noAdults = as.numeric(lcf_data$noAdults)
-lcf_data1$noPersons = as.numeric(lcf_data$noPersons)
-lcf_data1$NoChildren = as.numeric(lcf_data$NoChildren)
-lcf_data1$incomeSource = as.numeric(lcf_data$incomeSource)
-lcf_data1$internet = as.numeric(lcf_data$internet)
-lcf_data1$internet = as.numeric(lcf_data$internet)
-lcf_data1$economicHRP = as.numeric(lcf_data$economicHRP)
-lcf_data1$SEC3Class = as.numeric(lcf_data$SEC3Class)
-lcf_data1$tenureType = as.numeric(lcf_data$tenureType)
-lcf_data1$sex_HRP = as.numeric(lcf_data$sex_HRP)
 ```
 
 \
@@ -212,11 +205,12 @@ The structure of the dataframe is:
 str(lcf_data)
 ```
 
-### Model evaluation
+### Method
 
 The following functions will be used to evaluate the models.
 
 ```{r}
+
 get_bp_decision = function(model, alpha = 0.01) { 
   decide = unname(bptest(model)$p.value < alpha) 
   ifelse(decide, "Reject", "Fail to Reject")
@@ -243,6 +237,7 @@ get_adj_r2 = function(model) {
 # a) Normality 
 # b) Linearity
 # c) Constant variance
+
 assumption_test = function(model){
   par(mfrow=c(1,2))
   
@@ -257,111 +252,206 @@ assumption_test = function(model){
 ```
 
 
-## Exploratory Analysis
+## Exploratory Data Analysis
+
+First we see any correlation between the numeric varaiables, this will help us removing the highly corrleated variables.
 
 ```{r echo=FALSE,fig.cap="Figure 1 - Correlation and Scatterplot of the variables of the data set",warning=FALSE}
-PerformanceAnalytics::chart.Correlation(lcf_data1, histogram = TRUE, pch = 19)
+PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogram = TRUE, pch = 19)
 ```
 
-```{r echo=FALSE,fig.cap="Figure 2 - Correlation matrix for the data set"}
-corrplot::corrplot(cor(lcf_data1), method="circle")
-```
 
-The correlation and scatter plot shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, and to a letter extent with `noAdults`, and `NoChildren`. This is also shown in the correlation matrix of Figure 2. 
+
+The correlation  shown in Figure 1 shows a strong correlation between `hhsize` and `noPersons`, referring to the documentation shows that are they capture the same data.
+\
+
+`hhsize` = `noPersons`
+
+\
+`noPersons` = `noChild` + `noAdult`
+\
+
+we will remove `noPersons` , `noAdult` ,`noChildren` from the dataset .
 ```{r}
-cor(lcf_data1$hhsize,lcf_data1$noPersons)
-
-sum(!lcf_data1$hhsize == lcf_data1$noPersons)
+# Deleting the columns
+lcf_data$noPersons = NULL
+lcf_data$noAdults = NULL
+lcf_data$noChildren = NULL
 ```
-This shows that `hhsize` and `noPersons` have the same data values.
-Thus `hhsize` will be used as a potential predictor for the model in place of `noPersons`, `noAdults`, and `NoChildren`.
+
+\
+
+Lets do a correlation plot one more time
+```{r}
+PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogram = TRUE, pch = 19)
+```
+
+
+
 
 ## Model Building
 
-### Simple Model Explanation
+### Simple additive model with all variables
+
 Lets create a additive model first
 ```{r}
-model = lm(expenditure ~ ., data = lcf_data)
-summary(model)
+model_add_all = lm(expenditure ~ ., data = lcf_data)
+summary(model_add_all)
 ```
+\
 
-
-Selecting only the important variables
+Selecting only the important variables from the above model. Having a smaller model will help interpret the results.
 ```{r}
-model = lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
 
-summary(model)
+model_add= lm(formula = expenditure ~ income + hhsize +internet, data = lcf_data)
+summary(model_add)
+
 ```
 
+With just the important variable, $R^2$ did not go down much. Since above simple additive model will help us understand how expenditure is explained by other factor.
 
 \
 \
-
 
 
 ```{r fig.cap="Figure 3 - Residuals vs Fitted and Normal QQ Plot for the model"}
-assumption_test(model)
+assumption_test(model_add)
 ```
 
 
+\
 
-#### Log Transformation
+To infer from the model , assumptions of linear model should be met.
+
+
+* L - Response is **Linear** combination of Predictors
+
+* I - the erros are **Independent**
+
+* N - the error should follow **Normal** distribution
+
+* E - the error variance is **Equal** (constant) at any set of predictor values
+
+\
+
+From the fitted Vs Residual plot, 
+  * it seems constant varaiance is a suspect.
+  * Normality is suspect
+
+We need to do a transformation to so that we are not violating the above assumptions.
+
+First let's try log transformation
+
+##### Log Transformation
+
+\
+First let's try log transformation
 
 ```{r}
 
+# Log transformation of response variable
+model_log = lm(log(expenditure)~ income + hhsize + internet, data = lcf_data)
 
-model_log = lm(log(expenditure)~income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+
 summary(model_log)
 
 ```
 
 
+
 ```{r fig.cap="Figure 4 - Residuals vs Fitted and Normal QQ Plot for the log transformed model"}
+# We  will leverage the function we create prior to test if the linear model assumtions are violating
 assumption_test(model_log)
 ```
+\
+from the above graph , 
+
+* Normality is **NOT a suspect** as error follow theoretical quantiles.
+* Constant variance of error is **suspect** , as error are not evenly distributes for all fitted values.
+
+\
+\
+
+##### BoxCox Transformation
+
+We will try Box-Cox transformation
+
+The Box-Cox method considers a family of transformations on strictly positive response variables,
+$$
+g_\lambda(y) = \left\{
+\begin{array}{lr}\displaystyle\frac{y^\lambda - 1}{\lambda} &  \lambda \neq 0\\
+        & \\
+       \log(y) &  \lambda = 0
+     \end{array}
+   \right.
+$$
+   
+   The  λ parameter is chosen by numerically maximizing the log-likelihood,
 
 
-#### BoxCox Transformation
 
 ```{r warning=FALSE,fig.cap="Figure 5 - BoxCox for the simple model"}
-model =lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
+model =lm(expenditure ~ income + hhsize + internet, data = lcf_data)
 bc=boxcox(model,lambda = seq(-3,3))
 (lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
 ```
 
 
 ```{r}
-model = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_data)
-summary(model)
+model_bc = lm((expenditure^lambda) ~ ( income + hhsize + internet), data = lcf_data)
+summary(model_bc)
+```
+\
+
+```{r,fig.width=12,fig.cap="Figure 6 - Residuals vs Fitted and Normal QQ Plot for the BoxCox transformed model"}
+# We  will leverage the function we create prior to test if the linear model assumtions are violating
+assumption_test(model_bc)
 ```
 
-```{r,fig.width=8,fig.cap="Figure 6 - Residuals vs Fitted and Normal QQ Plot for the BoxCox transformed model"}
-assumption_test(model)
-```
+\
 
 
-Fitted Vs Residual plot looks ok 
+
+Eventhough we see little bit inconsistent in the varaiance, generally it looks ok. 
+
+* Normality is **NOT** a suspect.
+* Constant variance is **NOT** a suspect.
+
+\
+\
+
+**** 
+
+Based on the above model, lets find the Train RMSE & Test RMSE.Test RMSE will tell how well the model is performing in the unseen data.
 
 ```{r}
-coef(summary(model))
+# training and testing datasets
+set.seed(420)
+
+# Splitting the lcf dataset into train & test . 80% data goes to train & 20% data goes to test.
+lcf_trn_idx = sample(nrow(lcf_data), size = trunc(0.80 * nrow(lcf_data)))
+lcf_trn_data = lcf_data[lcf_trn_idx, ]
+lcf_tst_data = lcf_data[-lcf_trn_idx, ]
+
+# Building the model using only the training data
+model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn_data)
+
+
+# Train RMSE - prediction on Train using the model build on train dataset
+(train_rmse = sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2)))
 ```
+
 
 
 ```{r}
-model_train = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_trn_data)
-
-
-# Train RMSE
-sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))
-```
-
-
-
-```{r}
-# Test RMSE
-sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))
+# Test RMSE - Prediction on the Test dataset which is not used for prediction.
+# This is a good assessemnet on how this model will perform in the unseen data
+(test_rmse =sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2)))
 
 ```
+\
+\
+\
 
 ### Interaction Model Explanation
 Start with a large model,
@@ -477,181 +567,6 @@ Interaction | `r sqrt(mean((fitted.values(large_model_trans_back_bic) - lcf_trn_
 
 \
 \
-
-
-Lets is if any missing values
-```{r}
-sum(rowSums(is.na(lcf_data))>0)
-```
-
-Above results show, no missing values
-
-\
-\
-
-Since `expenditure` is top coded , removing top coded values.
-```{r}
-
-lcf_data = filter(lcf_data,expenditure!=max(lcf_data$expenditure))
-```
-
-\
-\
-
-
-
-```{r}
-summary(lcf_data$expenditure)
-ggplot(lcf_data,aes(y=expenditure,x=1))+geom_violin(fill="dodgerblue")
-```
-
-\
-\
-
-
-```{r,fig.height=16,fig.width=16}
-#pairs(lcf_data)
-```
-
-\
-\
-
-
-```{r}
-cor(lcf_data$hhsize,lcf_data$noPersons)
-
-sum(!lcf_data$hhsize == lcf_data$noPersons)
-```
-
-Both variables are exactly same , removing `noPersons`
-```{r}
-lcf_data$noPersons=NULL
-```
-\
-\
-
-
-
-```{r}
-# This function takes the model as the input and test 
-# a) Normality 
-# b) Linearity
-# c) Constant variance
-assumption_test = function(model){
-  par(mfrow=c(1,2))
-  
-  # Fitted vs residual plot
-  plot(fitted.values(model),resid(model),col="dodgerblue")
-  abline(h=0,col="red",lwd=2)
-  
-  # QQ plot to test normality
-  qqnorm(resid(model),col="dodgerblue")
-  qqline(resid(model),lwd=2,col="red")
-  
-  #print(paste("Shapiro-Wilk normality test :",shapiro.test(sample(resid(model),500,replace=FALSE))$p.value))
-  #print(paste("BP test for constant variance :",bptest(model)$p.value))
-}
-```
-
-
-
-lets create a additive model first
-```{r}
-model = lm(expenditure ~ ., data = lcf_data)
-summary(model)
-```
-
-
-Selecting only the important variables
-```{r}
-model = lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
-
-summary(model)
-```
-
-
-\
-\
-
-
-
-```{r}
-assumption_test(model)
-```
-
-
-
-### Log Transformation
-
-```{r}
-
-
-model_log = lm(log(expenditure)~income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
-summary(model_log)
-
-```
-
-
-```{r}
-assumption_test(model_log)
-```
-
-
-### BoxCox Transformation
-
-```{r warning=FALSE}
-library(MASS)
-model =lm(expenditure ~ income + internet + tenureType + SEC3Class + hhsize, data = lcf_data)
-bc=boxcox(model,lambda = seq(-3,3))
-(lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
-```
-
-
-```{r}
-model = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = lcf_data)
-summary(model)
-```
-
-```{r,fig.width=8}
-assumption_test(model)
-```
-
-
-Fitted Vs Residual plot looks ok 
-
-```{r}
-coef(summary(model))
-```
-
-```{r}
-set.seed(420)
-no_of_obs = nrow(lcf_data)
-
-idx = sample(no_of_obs,no_of_obs*.80)
-
-train = lcf_data[idx,]
-test = lcf_data[-idx,]
-```
-
-
-```{r}
-model_train = lm(expenditure^lambda ~  income +internet + hhsize + tenureType+SEC3Class, data = train)
-
-
-# Train RMSE
-sqrt(mean((predict(model_train)^(1/lambda) - train$expenditure)^2))
-```
-
-
-
-```{r}
-# Test RMSE
-sqrt(mean((predict(model_train,newdata = test)^(1/lambda) - test$expenditure)^2))
-
-```
-
-
-
 
 
 ## References
