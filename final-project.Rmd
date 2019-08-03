@@ -25,10 +25,7 @@ Loading the libraries required for this analysis
 library(tidyverse)
 library(kableExtra)
 library(lmtest)
-<<<<<<< HEAD
-=======
 library(MASS)
->>>>>>> khemnavet/master
 ```
 
 ## Introduction to the dataset
@@ -116,56 +113,6 @@ Loading data from the tab delimited file:
 ```{r}
 lcf_data_raw = read.table("icfforworkbook.tab", sep = "\t", header = TRUE)
 
-<<<<<<< HEAD
-colnames(lcf_data_raw)[colnames(lcf_data_raw)=="G018r"] = "noAdults"
-colnames(lcf_data_raw)[colnames(lcf_data_raw)=="A049r"] = "noPersons"
-
-# Converting to factor variable
-# 1 = EarnedIncome
-# 2 = OtherIncome
-lcf_data_raw$incomeSource = as.factor(ifelse(lcf_data_raw$P425r==1,"EarnedIncome","OtherIncome"))
-
-#Internet Conncetion in household
-# 1 - Yes
-# 2 - No
-lcf_data_raw$internet = as.factor(ifelse(lcf_data_raw$A172==1, "Yes", "No"))
-
-
-# Economic position of Household Reference Person
-# 1 - Full-time working
-# 2 - Part-time working
-# 3 - Unemployed and work related Government Training Programmes
-# 4 - Economically inactive
-lcf_data_raw$economicHRP = as.factor(ifelse(lcf_data_raw$A093r==1,"FullTime",ifelse(lcf_data_raw$A093r==2,"PartTime",ifelse(lcf_data_raw$A093r==3,"Unemployed","EconomicallyInactive"))))
-
-
-# Class of Household Reference Person
-# 1 - Higher managerial, administrative and professional occupations
-# 2 - Intermediate occupations
-# 3 - Routine and manual occupations
-# 4 - Never worked and long term unemployed, students and occupation not stated
-# 5 - Not classified for other reasons
-lcf_data_raw$SEC3Class = as.factor(ifelse(lcf_data_raw$A094r==1, "Class1", ifelse(lcf_data_raw$A094r==2, "Class2", ifelse(lcf_data_raw$A094r==3, "Class3", ifelse(lcf_data_raw$A094r==4, "Class4", "Class5")))))
-
-
-lcf_data_raw$tenureType = as.factor(ifelse(lcf_data_raw$A121r==1, "PublicRented", ifelse(lcf_data_raw$A121r==2, "PrivateRented", "Owned")))
-
-
-lcf_data_raw$sex_HRP = as.factor(ifelse(lcf_data_raw$SexHRP==1, "Male", "Female"))
-
-
-
-lcf_data_raw$noAdults = as.factor(lcf_data_raw$noAdults)
-
-
-lcf_data_raw$NoChildren = as.factor(ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore")))
-
-lcf_data_raw$Gorx = as.factor(lcf_data_raw$Gorx)
-
-
-lcf_data_raw = filter(lcf_data_raw,income > 0)
-
-=======
 # Converting to factor variable
 # Income Source
 # 1 = EarnedIncome
@@ -218,7 +165,6 @@ lcf_data_raw$G018r = as.factor(lcf_data_raw$G018r)
 # Number of children in the household
 lcf_data_raw$NoChildren = ifelse(lcf_data_raw$G019r==1, "None", ifelse(lcf_data_raw$G019r==2, "OneChild", "TwoOrMore"))
 lcf_data_raw$NoChildren = as.factor(lcf_data_raw$NoChildren)
->>>>>>> khemnavet/master
 
 
 # select columns
