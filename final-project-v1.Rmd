@@ -1,5 +1,5 @@
 ---
-title: "UK Household Annual expenditure Analysis"
+title: "UK Household Annual Expenditure Analysis"
 author: "STAT 420: Final Project, Summer 2019, kamlesh2, kdp3, pa9"
 date: ''
 output:
@@ -237,17 +237,11 @@ str(lcf_data)
 ```
 
 
-## Functions
+## Method
 
 The following functions are used to evaluate the models:
 
-- Breusch-Pagan test (`bptest`)
-
-- Shapiro-Wilk test
-
 - Leave-one-out cross-validated Root Mean Square Error (`LOOCV RMSE`)
-
-- Root Mean Square Error (`RMSE`)
 
 - Adjusted R squared (`Adjusted $R^2$`)
 
@@ -255,22 +249,16 @@ The following functions are used to evaluate the models:
 
 ```{r}
 
-get_bp_decision = function(model, alpha = 0.01) { 
-  decide = unname(bptest(model)$p.value < alpha) 
-  ifelse(decide, "Reject", "Fail to Reject")
-}
-
-get_sw_decision = function(model, alpha = 0.01) {
- decide = unname(shapiro.test(resid(model))$p.value < alpha) 
- ifelse(decide, "Reject", "Fail to Reject")
-}
-
-get_loocv_rmse = function(model) { 
-  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
-}
-
-get_rmse = function(model) {
-  mean(model$residuals ^ 2)
+get_loocv_rmse = function(model, transform_response = FALSE, lambda = 1) {
+  if (transform_response) { # perform reverse BoxCox
+    y_hat = as.matrix(model$fitted.values)
+    e = as.matrix(((model$model[,1]^lambda)-1)/lambda) - y_hat
+    n = nrow(model$model)
+    sqrt((1/n) * t(e) %*% e)
+  }
+  else {
+    sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+  }
 }
 
 get_adj_r2 = function(model) { 
@@ -312,7 +300,7 @@ The correlation  shown in Figure 1 shows a strong correlation between `hhsize` a
 `hhsize` = `noPersons`
 
 \
-`noPersons` = `noChild` + `noAdult`
+`noPersons` = `noChildren` + `noAdult`
 \
 
 we will remove `noPersons` , `noAdult` ,`noChildren` from the dataset .
@@ -331,9 +319,9 @@ PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogra
 ```
 
 
-# Model Building
+## Model Building
 
-## Simple additive model with all variables
+### Simple additive model with all variables
 
 Lets create a additive model first
 ```{r}
@@ -368,7 +356,7 @@ To infer from the model , assumptions of linear model should be met.
 
 * L - Response is **Linear** combination of Predictors
 
-* I - the erros are **Independent**
+* I - the errors are **Independent**
 
 * N - the error should follow **Normal** distribution
 
@@ -384,7 +372,7 @@ We need to do a transformation to so that we are not violating the above assumpt
 
 First let's try log transformation
 
-### Log Transformation
+#### Log Transformation
 
 \
 First let's try log transformation
@@ -414,7 +402,7 @@ from the above graph ,
 \
 \
 
-### BoxCox Transformation
+#### BoxCox Transformation
 
 We will try Box-Cox transformation
 
@@ -486,7 +474,7 @@ model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn
 \
 \
 
-## Interaction Model Explanation
+### Interaction Model Explanation
 Start with a large model,
 
 ```{r}
@@ -512,10 +500,8 @@ Characteristic | Large Model | Model from backward AIC | Model from backward BIC
 Number of predictors | `r length(coef(large_model))` | `r length(coef(large_model_back_aic))` | `r length(coef(large_model_back_bic))`
 Adjusted $R^2$ | `r get_adj_r2(large_model)` | `r get_adj_r2(large_model_back_aic)` | `r get_adj_r2(large_model_back_bic)`
 LOOCV RMSE | `r get_loocv_rmse(large_model)` | `r get_loocv_rmse(large_model_back_aic)` | `r get_loocv_rmse(large_model_back_bic)`
-Shapiro-Wilks Test | `r get_sw_decision(large_model)` | `r get_sw_decision(large_model_back_aic)` | `r get_sw_decision(large_model_back_bic)`
-BP Test | `r get_bp_decision(large_model)` | `r get_bp_decision(large_model_back_aic)` | `r get_bp_decision(large_model_back_bic)`
 
-The model obtained from the backward AIC search has the lower LOOCV RMSE and higher Adjusted $R^2$. It did not pass the Shapiro-Wilks and BP tests. The Fitted vs Residual plot and the Normal QQ Plot (figure 7) were then looked at for this model.
+The model obtained from the backward AIC search has the lower LOOCV RMSE and higher Adjusted $R^2$. The Fitted vs Residual plot and the Normal QQ Plot (figure 7) were then looked at for this model.
 
 ```{r,fig.width=8,fig.cap="Figure 7 - Residuals vs Fitted and Normal QQ Plot for the model obtained from backward AIC search"}
 assumption_test(large_model_back_aic)
@@ -554,11 +540,9 @@ Characteristic | Large Model | Model from backward AIC | Model from backward BIC
 ------ | ------ | ------ | ------
 Number of predictors | `r length(coef(large_model_trans))` | `r length(coef(large_model_trans_back_aic))` | `r length(coef(large_model_trans_back_bic))`
 Adjusted $R^2$ | `r get_adj_r2(large_model_trans)` | `r get_adj_r2(large_model_trans_back_aic)` | `r get_adj_r2(large_model_trans_back_bic)`
-LOOCV RMSE | `r get_loocv_rmse(large_model_trans)` | `r get_loocv_rmse(large_model_trans_back_aic)` | `r get_loocv_rmse(large_model_trans_back_bic)`
-Shapiro-Wilks Test | `r get_sw_decision(large_model_trans)` | `r get_sw_decision(large_model_trans_back_aic)` | `r get_sw_decision(large_model_trans_back_bic)`
-BP Test | `r get_bp_decision(large_model_trans)` | `r get_bp_decision(large_model_trans_back_aic)` | `r get_bp_decision(large_model_trans_back_bic)`
+LOOCV RMSE | `r get_loocv_rmse(large_model_trans, TRUE, inter_lambda)` | `r get_loocv_rmse(large_model_trans_back_aic, TRUE, inter_lambda)` | `r get_loocv_rmse(large_model_trans_back_bic, TRUE, inter_lambda)`
 
-The LOOCV RMSE values obtained are lower than those obtained before the transformation and the $R^2$ value has increased. The Shapiro-Wilks and the BP tests are not passed by these models however. 
+The LOOCV RMSE values obtained are lower than those obtained before the transformation and the $R^2$ value has increased.  
 
 The model chosen by the backward BIC search is smaller and has similar LOOCV RMSE and Adjusted $R^2$ values to the backward AIC search and so will be used. The Fitted vs Residual plot and the Normal QQ Plot (figure 9) were then looked at for this model.
 
@@ -582,19 +566,27 @@ abline(h=0, col="red")
 
 The plot shows that the predicted values are very close to the actual values and so the model is a good candidate to explain the relationship among these variables.
 
-## Comparing the models
-The RMSE for the additive model and the interaction model are
+The summary of this model is (`inter_lambda` = `r inter_lambda`)
 
-Model | RMSE on training data | RMSE on test data
------- | ------ | ------
-Additive | `r sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))` | `r sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))`
-Interaction | `r sqrt(mean((fitted.values(large_model_trans_back_bic) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))`
-
-
-\
-\
+```{r echo=FALSE}
+summary(large_model_trans_back_bic)
+```
 
 # Results
+## Comparing the models
+The adjusted $R^2$ and RMSE values for the additive model and the interaction model are
+
+Model | $R^2$ | RMSE on training data | RMSE on test data
+------ | ------ | ------ | ------ 
+Additive | `r get_adj_r2(model_train)` | `r sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))` | `r sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))`
+Interaction | `r get_adj_r2(large_model_trans_back_bic)` | `r sqrt(mean(((inter_lambda * fitted.values(large_model_trans_back_bic) + 1)^(1/inter_lambda) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))`
+
+The RMSE values for the model using the test dataset is close to that using the training dataset and this suggests that the models are not over fitting to the data.  
+
+\
+\
+
+# Discussion
 
 
 
