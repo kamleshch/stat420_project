@@ -281,6 +281,9 @@ assumption_test = function(model){
   qqnorm(resid(model),col="dodgerblue")
   qqline(resid(model),lwd=2,col="red")
 }
+
+
+reverse_boxcox = function(z,lambda){ (z*lambda + 1)^(1/lambda)}
 ```
 \
 
@@ -325,7 +328,7 @@ PerformanceAnalytics::chart.Correlation(select_if(lcf_data,is.numeric), histogra
 
 Lets create a additive model first
 ```{r}
-model_add_all = lm(expenditure ~ ., data = lcf_data)
+model_add_all = lm(expenditure ~ ., data = lcf_trn_data)
 summary(model_add_all)
 ```
 \
@@ -333,7 +336,7 @@ summary(model_add_all)
 Selecting only the important variables from the above model. Having a smaller model will help interpret the results.
 ```{r}
 
-model_add= lm(formula = expenditure ~ income + hhsize +internet, data = lcf_data)
+model_add= lm(formula = expenditure ~ income + hhsize +internet, data = lcf_trn_data)
 summary(model_add)
 
 ```
@@ -380,7 +383,7 @@ First let's try log transformation
 ```{r}
 
 # Log transformation of response variable
-model_log = lm(log(expenditure)~ income + hhsize + internet, data = lcf_data)
+model_log = lm(log(expenditure)~ income + hhsize + internet, data = lcf_trn_data)
 
 
 summary(model_log)
@@ -421,21 +424,21 @@ $$
 
 
 ```{r warning=FALSE,fig.cap="Figure 5 - BoxCox for the simple model"}
-model =lm(expenditure ~ income + hhsize + internet, data = lcf_data)
+model =lm(expenditure ~ income + hhsize + internet, data = lcf_trn_data)
 bc=boxcox(model,lambda = seq(-3,3))
 (lambda = best_lambda = bc$x[which(bc$y==max(bc$y))])
 ```
 
 
 ```{r}
-model_bc = lm((expenditure^lambda) ~ ( income + hhsize + internet), data = lcf_data)
-summary(model_bc)
+model_add = lm(((expenditure^lambda-1)/lambda) ~ ( income + hhsize + internet), data = lcf_trn_data)
+summary(model_add)
 ```
 \
 
 ```{r,fig.width=12,fig.cap="Figure 6 - Residuals vs Fitted and Normal QQ Plot for the BoxCox transformed model"}
 # We  will leverage the function we create prior to test if the linear model assumtions are violating
-assumption_test(model_bc)
+assumption_test(model_add)
 ```
 
 \
@@ -456,11 +459,11 @@ Based on the above model, lets find the Train RMSE & Test RMSE.Test RMSE will te
 
 ```{r}
 # Building the model using only the training data
-model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn_data)
+model_train = lm((expenditure^lambda-1)/lambda ~ income + hhsize + internet, data = lcf_trn_data)
 
 
 # Train RMSE - prediction on Train using the model build on train dataset
-(train_rmse = sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2)))
+(train_rmse = sqrt(mean((reverse_boxcox(predict(model_train),lambda) - lcf_trn_data$expenditure)^2)))
 ```
 
 
@@ -468,7 +471,7 @@ model_train = lm(expenditure^lambda ~ income + hhsize + internet, data = lcf_trn
 ```{r}
 # Test RMSE - Prediction on the Test dataset which is not used for prediction.
 # This is a good assessemnet on how this model will perform in the unseen data
-(test_rmse =sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2)))
+(test_rmse =sqrt(mean((reverse_boxcox(predict(model_train,newdata = lcf_tst_data),lambda) - lcf_tst_data$expenditure)^2)))
 
 ```
 \
@@ -553,7 +556,8 @@ assumption_test(large_model_trans_back_bic)
 The plots show that the model assumptions are not being violated. This model was then tested to see how well it performed on predicting the `expediture` using the test dataset.
 
 ```{r}
-large_model_trans_back_bic_prediction = ((inter_lambda * predict(large_model_trans_back_bic, newdata = lcf_tst_data))+1)^(1/inter_lambda)
+large_model_trans_back_bic_prediction = reverse_boxcox(predict(large_model_trans_back_bic, newdata = lcf_tst_data),inter_lambda)
+
 large_model_trans_back_bic_prediction_diff = (lcf_tst_data[,"expenditure"]-large_model_trans_back_bic_prediction)/lcf_tst_data[,"expenditure"]
 ```
 
@@ -576,10 +580,10 @@ summary(large_model_trans_back_bic)
 ## Comparing the models
 The adjusted $R^2$ and RMSE values for the additive model and the interaction model are
 
-Model | $R^2$ | RMSE on training data | RMSE on test data
------- | ------ | ------ | ------ 
-Additive | `r get_adj_r2(model_train)` | `r sqrt(mean((predict(model_train)^(1/lambda) - lcf_trn_data$expenditure)^2))` | `r sqrt(mean((predict(model_train,newdata = lcf_tst_data)^(1/lambda) - lcf_tst_data$expenditure)^2))`
-Interaction | `r get_adj_r2(large_model_trans_back_bic)` | `r sqrt(mean(((inter_lambda * fitted.values(large_model_trans_back_bic) + 1)^(1/inter_lambda) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))`
+Model | $R^2$ | RMSE on training data | RMSE on test data | Number of Predictors
+------ | ------ | ------ | ------ | ------
+Additive | `r get_adj_r2(model_train)` | `r train_rmse` | `r test_rmse` | `r length(coef(model_add)) - 1`
+Interaction | `r get_adj_r2(large_model_trans_back_bic)` | `r sqrt(mean(((inter_lambda * fitted.values(large_model_trans_back_bic) + 1)^(1/inter_lambda) - lcf_trn_data[,"expenditure"])^2))` | `r sqrt(mean((large_model_trans_back_bic_prediction - lcf_tst_data[,"expenditure"])^2))` |`r length(coef(large_model_trans_back_bic)) - 1`
 
 The RMSE values for the model using the test dataset is close to that using the training dataset and this suggests that the models are not over fitting to the data.  
 
@@ -588,6 +592,19 @@ The RMSE values for the model using the test dataset is close to that using the 
 
 # Discussion
 
+
+From the above results, we see simple additive model and interaction model with 18 predictors have similar rmse on the unseen test dataset.
+
+We prefer the simple additive since we can explain the variation of `expenditure` with few variables and easy to infer the relationship with the predictors.
+
+```{r}
+(beta=coef(model_add))
+```
+
+$ \frac{{{expenditure}^\lambda}-1}{\lambda} = $ `r beta[[1]]` + `r beta[[2]]`income + `r beta[[3]]` hhsize + `r beta[[4]]` internet
+
+
+We can predict the expenditure of household with the three variables `income`, `hhsize` & `internet`. Eventhough we can create complex interaction model, prediction using above 3 variables is as good as complex interaction model.
 
 
 \
